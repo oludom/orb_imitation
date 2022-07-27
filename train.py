@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from email.policy import default
 from select import epoll
 
 from datagen.RaceTrackLoader import RaceTracksDataset
@@ -15,6 +16,9 @@ from torchsummary import summary
 
 from ResNet8 import ResNet8
 import torchvision.models.densenet
+import argparse
+from tqdm import tqdm
+
 
 torch.set_printoptions(linewidth=120)
 torch.set_grad_enabled(True)
@@ -26,18 +30,22 @@ learning_rate_change = 0.1
 learning_rate_change_epoch = 10
 batch_size = 32
 
-TB_suffix = "run0"
+TB_suffix = "run6"
 loss_type = "MSE"
 phases = ['train', 'val']
 skipLastXImages = 600
 
-# project_basepath = "/workspaces/imitation"
-project_basepath = "/home/micha/dev/ml/orb_imitation"
-dataset_basepath = "/media/micha/eSSD/datasets"
-# dataset_basepath = "/home/micha/dev/datasets/droneracing"
-# dataset_basepath = "/data/datasets"
-# dataset_basename = "X4Gates_Circle_right_"
-dataset_basename = "X4Gates_Circles"
+
+parser = argparse.ArgumentParser("Arguments for training")
+parser.add_argument('--project-basepath', '-pb', type=str, default="/home/micha/dev/ml/orb_imitation")
+parser.add_argument('--dataset-basepath', '-db', type=str, default="/media/micha/eSSD/datasets")
+parser.add_argument('--dataset-basename', '-n', type=str, default="X4Gates_Circles")
+
+args = parser.parse_args()
+
+project_basepath = args.project_basepath
+dataset_basepath = args.dataset_basepath
+dataset_basename = args.dataset_basename
 # dataset_basename = "X4Gates_Circle_2"
 
 # create path for run
@@ -49,36 +57,42 @@ writer = SummaryWriter(str(TB_path))
 
 print("loading dataset...")
 
-datasets = {
-    'train':
-        torch.utils.data.DataLoader(
-            RaceTracksDataset(
-                dataset_basepath,
-                dataset_basename,
-                device=device,
-                maxTracksLoaded=12,
-                imageScale=100,
-                skipTracks=0,
-                grayScale=False,
-                skipLastXImages=skipLastXImages
-            ),
-            batch_size=batch_size,
-            shuffle=True
-        ),
-    'val':
-        torch.utils.data.DataLoader(
-            RaceTracksDataset(
+train_set = RaceTracksDataset(
                 dataset_basepath,
                 dataset_basename,
                 device=device,
                 maxTracksLoaded=6,
                 imageScale=100,
-                skipTracks=12,
+                skipTracks=0,
                 grayScale=False,
                 skipLastXImages=skipLastXImages
-            ),
+            )
+
+print(len(train_set))
+
+val_set = RaceTracksDataset(
+                dataset_basepath,
+                dataset_basename,
+                device=device,
+                maxTracksLoaded=3,
+                imageScale=100,
+                skipTracks=0,
+                grayScale=False,
+                skipLastXImages=skipLastXImages
+            )
+
+datasets = {
+    'train':
+        torch.utils.data.DataLoader(
+            train_set,
             batch_size=batch_size,
             shuffle=True
+        ),
+    'val':
+        torch.utils.data.DataLoader(
+            val_set,
+            batch_size=batch_size,
+            shuffle=False
         )
 }
 
@@ -139,7 +153,7 @@ try:
 
             dataset = datasets[phase]
 
-            for images, labels in dataset:  # change images to batches
+            for images, labels in tqdm(dataset):  # change images to batches
 
                 if epoch == 0 and step_pos['train'] == 0:
                     img_grid = torchvision.utils.make_grid(images)
