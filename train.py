@@ -12,9 +12,9 @@ import torch.nn as nn
 import torch.optim as optim
 
 from torch.utils.tensorboard import SummaryWriter
-from torchsummary import summary
-
-from ResNet8 import ResNet8
+# from torchsummary import summary
+from models.racenet8 import RaceNet8
+from models.ResNet8 import ResNet8
 import torchvision.models.densenet
 import argparse
 from tqdm import tqdm
@@ -30,16 +30,18 @@ learning_rate_change = 0.1
 learning_rate_change_epoch = 10
 batch_size = 32
 
-TB_suffix = "run6"
+
 loss_type = "MSE"
 phases = ['train', 'val']
-skipLastXImages = 600
+skipLastXImages = 0
 
 
 parser = argparse.ArgumentParser("Arguments for training")
 parser.add_argument('--project-basepath', '-pb', type=str, default="/home/micha/dev/ml/orb_imitation")
 parser.add_argument('--dataset-basepath', '-db', type=str, default="/media/micha/eSSD/datasets")
 parser.add_argument('--dataset-basename', '-n', type=str, default="X4Gates_Circles")
+parser.add_argument('--jobs', '-j', type=int, default=4)
+parser.add_argument('--run', '-r', type=str, default='run0')
 
 args = parser.parse_args()
 
@@ -49,6 +51,7 @@ dataset_basename = args.dataset_basename
 # dataset_basename = "X4Gates_Circle_2"
 
 # create path for run
+TB_suffix = args.run
 TB_path = Path(project_basepath, f"runs/ResNet8_bs={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
 if TB_path.exists():
     print("TB_path exists")
@@ -57,15 +60,20 @@ writer = SummaryWriter(str(TB_path))
 
 print("loading dataset...")
 
+train_tracks = [0,1,2,3,4,5,6,7]
+val_tracks = [8,9]
+
+
 train_set = RaceTracksDataset(
                 dataset_basepath,
                 dataset_basename,
                 device=device,
-                maxTracksLoaded=6,
+                maxTracksLoaded=len(train_tracks),
                 imageScale=100,
                 skipTracks=0,
                 grayScale=False,
-                skipLastXImages=skipLastXImages
+                skipLastXImages=skipLastXImages,
+                tracknames=train_tracks
             )
 
 print(len(train_set))
@@ -74,11 +82,13 @@ val_set = RaceTracksDataset(
                 dataset_basepath,
                 dataset_basename,
                 device=device,
-                maxTracksLoaded=3,
+                maxTracksLoaded=len(val_tracks),
                 imageScale=100,
                 skipTracks=0,
                 grayScale=False,
-                skipLastXImages=skipLastXImages
+                skipLastXImages=skipLastXImages,
+                train=False,
+                tracknames=val_tracks
             )
 
 datasets = {
@@ -86,13 +96,15 @@ datasets = {
         torch.utils.data.DataLoader(
             train_set,
             batch_size=batch_size,
-            shuffle=True
+            shuffle=True,
+            num_workers = args.jobs
         ),
     'val':
         torch.utils.data.DataLoader(
             val_set,
             batch_size=batch_size,
-            shuffle=False
+            shuffle=False,
+            num_workers = args.jobs
         )
 }
 
@@ -129,7 +141,7 @@ for el in phases:
 
 # print("batch count:", len(train_loader))
 
-summary(model, (3, 200, 300), device=device)
+# summary(model, (3, 200, 300), device=device)
 
 best_model = copy.deepcopy(model.state_dict())
 best_loss = 0.0
@@ -142,7 +154,7 @@ try:
 
         print('Epoch {}/{}'.format(epoch, epochs - 1))
         print('-' * 10)
-
+        # print('TB')
         optimizer = optim.Adam(model.parameters(), lr=schedule(epoch), weight_decay=2e-4)
 
         for phase in phases:

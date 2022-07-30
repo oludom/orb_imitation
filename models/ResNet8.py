@@ -6,6 +6,8 @@ import torch.nn.functional as F
 
 import math
 
+# from torchsummary import summary
+
 '''
 taken from https://github.com/pytorch/pytorch/issues/67551#issuecomment-954972351
 pytorch does not support padding='same' if Conv2d has stride other than 1
@@ -40,7 +42,7 @@ class Conv2dSame(torch.nn.Conv2d):
 class ResNet8(nn.Module):
     def __init__(self, input_dim, output_dim, f=0.25):
         super(ResNet8, self).__init__()
-
+        self.f = f
         # kaiming he norm used as default by pytorch
 
         # first residual block
@@ -113,3 +115,6 @@ class ResNet8(nn.Module):
 
         return to
 
+if __name__ == '__main__':
+    rn8 = ResNet8(3, 4)
+    # summary(rn8, input_size=(3, 200,300), device='cpu')
