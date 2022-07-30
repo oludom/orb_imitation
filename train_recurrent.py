@@ -2,7 +2,9 @@
 from email.policy import default
 from select import epoll
 
-from datagen.RaceTrackLoader import RaceTracksDataset
+from matplotlib import image
+
+from datagen.RaceTrackLoader import RaceTracksDataset, RecurrentRaceTrackDataset,RecurrentRaceTracksLoader
 
 from pathlib import Path
 import copy
@@ -63,7 +65,7 @@ train_tracks = [7,0,4,9,6,1,5]
 val_tracks = [8,3]
 
 
-train_set = RaceTracksDataset(
+train_set = RecurrentRaceTrackDataset(
                 dataset_basepath,
                 dataset_basename,
                 device=device,
@@ -77,7 +79,7 @@ train_set = RaceTracksDataset(
 
 print(len(train_set))
 
-val_set = RaceTracksDataset(
+val_set = RecurrentRaceTrackDataset(
                 dataset_basepath,
                 dataset_basename,
                 device=device,
@@ -165,7 +167,7 @@ try:
             dataset = datasets[phase]
 
             for images, labels in tqdm(dataset):  # change images to batches
-
+                
                 if epoch == 0 and step_pos['train'] == 0:
                     img_grid = torchvision.utils.make_grid(images)
                     # img_grid = img_grid.permute(1,2,0)
@@ -173,28 +175,27 @@ try:
 
                 images = images.to(dev)
                 labels = labels.to(dev)
-
-                # track history only if in train phase
+                preds = torch.zeros_like(labels).to(dev)
+                h_last = torch.zeros(1,len(images),256).to(dev)
                 with torch.set_grad_enabled(phase == 'train'):
-                    # predict and calculate loss
-                    preds = model(images)
-
-                    loss = lossfunction(preds, labels)
-
-                    # only backward and optimize if in training phase
-                    if phase == 'train':
-                        # calculate gradients
-                        optimizer.zero_grad()
-                        loss.backward()
-                        # update weights
-                        optimizer.step()
-
-                # print("batch", image_count, "loss", loss.item())
-                total_loss[phase] += loss.item()
-
-                # print("batch:", i, "loss:", loss.item())
-                writer.add_scalar(f"Loss/{phase}", loss.item(), global_step=(step_pos[phase]))
-                step_pos[phase] += 1
+                    for i, sample in images():
+                        # track history only if in train phase
+                            # predict and calculate loss
+                            preds[i] , h_now = model(images, h_last)
+                            h_now = h_last                        
+                loss = lossfunction(preds, labels)
+                # only backward and optimize if in training phase
+                if phase == 'train':
+                    # calculate gradients
+                    optimizer.zero_grad()
+                    loss.backward()
+                    # update weights
+                    optimizer.step()
+                    # print("batch", image_count, "loss", loss.item())
+                    total_loss[phase] += loss.item()
+                    # print("batch:", i, "loss:", loss.item())
+                    writer.add_scalar(f"Loss/{phase}", loss.item(), global_step=(step_pos[phase]))
+                    step_pos[phase] += 1
 
             # step_lr_scheduler.step()
             avg_total_loss = total_loss[phase] / batch_count[phase]
