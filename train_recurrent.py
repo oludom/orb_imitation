@@ -113,7 +113,7 @@ dev = torch.device(device)
 
 # model = ImageCNN4(device)
 # model = dn.DenseNetCustom()
-model = ResNet8(input_dim=3, output_dim=4, f=.5)
+model = RaceNet8(input_dim=3, output_dim=4, f=.5)
 model = model.to(dev)
 
 
@@ -169,7 +169,7 @@ try:
             for images, labels in tqdm(dataset):  # change images to batches
                 
                 if epoch == 0 and step_pos['train'] == 0:
-                    img_grid = torchvision.utils.make_grid(images)
+                    img_grid = torchvision.utils.make_grid(images[:, 0, :, :, :])
                     # img_grid = img_grid.permute(1,2,0)
                     writer.add_image('first images', img_grid)
 
@@ -178,24 +178,25 @@ try:
                 preds = torch.zeros_like(labels).to(dev)
                 h_last = torch.zeros(1,len(images),256).to(dev)
                 with torch.set_grad_enabled(phase == 'train'):
-                    for i, sample in images():
+                    for i in range(images.size(1)): #sequence
                         # track history only if in train phase
                             # predict and calculate loss
-                            preds[i] , h_now = model(images, h_last)
+                            preds[:, i, :] , h_now = model(images[:, i, :, :, :], h_last)
                             h_now = h_last                        
-                loss = lossfunction(preds, labels)
-                # only backward and optimize if in training phase
-                if phase == 'train':
-                    # calculate gradients
-                    optimizer.zero_grad()
-                    loss.backward()
-                    # update weights
-                    optimizer.step()
-                    # print("batch", image_count, "loss", loss.item())
-                    total_loss[phase] += loss.item()
-                    # print("batch:", i, "loss:", loss.item())
-                    writer.add_scalar(f"Loss/{phase}", loss.item(), global_step=(step_pos[phase]))
-                    step_pos[phase] += 1
+                    loss = lossfunction(preds, labels)
+                    # only backward and optimize if in training phase
+                    if phase == 'train':
+                        # calculate gradients
+                        optimizer.zero_grad()
+                        loss.backward()
+                        # update weights
+                        optimizer.step()
+                # print("batch", image_count, "loss", loss.item())
+                
+                total_loss[phase] += loss.item()
+                # print("batch:", i, "loss:", loss.item())
+                writer.add_scalar(f"Loss/{phase}", loss.item(), global_step=(step_pos[phase]))
+                step_pos[phase] += 1
 
             # step_lr_scheduler.step()
             avg_total_loss = total_loss[phase] / batch_count[phase]
