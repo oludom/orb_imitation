@@ -11,7 +11,8 @@ class RaceNet8(ResNet8):
             hidden_size = 256,
             num_layers = num_recurrent_layer,
             nonlinearity = 'tanh',
-            dropout = 0.5
+            dropout = 0.5,
+            batch_first = True
         )
         
     def forward(self, t, h_last):
@@ -31,7 +32,8 @@ class RaceNet8(ResNet8):
         t7 = t5_ + t6
 
         t8 = self.x7(t7)
-        t8 = torch.unsqueeze(t8, dim=1)
-        td , h_now = self.recurrent(t8, h_last)
-        to = self.out(td)
+        t8 = torch.unsqueeze(t8, dim=1) # [B, 1, 2240*4*f]
+        td , h_now = self.recurrent(t8, h_last) # [B, 1, 256], [B, 1, 256]
+        to = self.out(td) # [B, 1,4]
+        to = torch.squeeze(to, dim=1) # [B, 4]
         return to, h_now
