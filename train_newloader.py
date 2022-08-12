@@ -11,6 +11,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from torch.utils.tensorboard import SummaryWriter
+from torch.utils.data import random_split
 # from torchsummary import summary
 from models.racenet8 import RaceNet8
 from models.ResNet8 import ResNet8
@@ -32,7 +33,8 @@ batch_size = 32
 
 loss_type = "MSE"
 phases = ['train', 'val']
-skipLastXImages = 600
+skipFirstXImages = 0
+skipLastXImages = 0
 
 
 parser = argparse.ArgumentParser("Arguments for training")
@@ -51,7 +53,7 @@ dataset_basename = args.dataset_basename
 
 # create path for run
 TB_suffix = args.run
-TB_path = Path(project_basepath, f"runs/ResNet8_bs={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
+TB_path = Path(project_basepath, f"runs/ResNet8_test_onegateL1108_world_frame={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
 if TB_path.exists():
     print("TB_path exists")
     exit(0)
@@ -65,11 +67,11 @@ elif args.frame=='body':
 
 print("loading dataset...")
 
-train_tracks = [7,0,4,9,6,1,5]
-val_tracks = [8,3]
+train_tracks = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39]
+# val_tracks = [8,3]
 
 
-train_set = RaceTracksDataset(
+dataset = RaceTracksDataset(
                 dataset_basepath,
                 dataset_basename,
                 device=device,
@@ -77,24 +79,29 @@ train_set = RaceTracksDataset(
                 imageScale=100,
                 skipTracks=0,
                 grayScale=False,
-                skipLastXImages=skipLastXImages,
+                skipFirstXImages = skipFirstXImages,
+                skipLastXImages= skipLastXImages,
                 tracknames=train_tracks
             )
 
-print(len(train_set))
+print(len(dataset))
+split_ratio = 0.8
+train_size = int(split_ratio * len(dataset))
+val_size = len(dataset) - train_size
+train_set, val_set = torch.utils.data.random_split(dataset, [train_size, val_size])
 
-val_set = RaceTracksDataset(
-                dataset_basepath,
-                dataset_basename,
-                device=device,
-                maxTracksLoaded=len(val_tracks),
-                imageScale=100,
-                skipTracks=len(train_tracks),
-                grayScale=False,
-                skipLastXImages=skipLastXImages,
-                train=False,
-                tracknames=val_tracks
-            )
+# val_set = RaceTracksDataset(
+#                 dataset_basepath,
+#                 dataset_basename,
+#                 device=device,
+#                 maxTracksLoaded=len(val_tracks),
+#                 imageScale=100,
+#                 skipTracks=len(train_tracks),
+#                 grayScale=False,
+#                 skipLastXImages=skipLastXImages,
+#                 train=False,
+#                 tracknames=val_tracks
+#             )
 
 datasets = {
     'train':
@@ -169,10 +176,10 @@ try:
                 model.eval()  # Set model to evaluate mode
 
             dataset = datasets[phase]
-
+            num_batch = 0
             for images, labels in tqdm(dataset):  # change images to batches
+
                 if epoch == 0 and step_pos['train'] == 0:
-                    
                     img_grid = torchvision.utils.make_grid(images)
                     # img_grid = img_grid.permute(1,2,0)
                     writer.add_image('first images', img_grid)
@@ -184,9 +191,11 @@ try:
                 with torch.set_grad_enabled(phase == 'train'):
                     # predict and calculate loss
                     preds = model(images)
-
+                    print(len(preds))
+                    print(f'pred_x = {preds[0]}, pred_y = {preds[1]}, pred_z = {preds[2]}, pred_yaw = {preds[3]}')
+                    print(f'label_x = {labels[0]}')
                     loss = lossfunction(preds, labels)
-
+                    print(f'loss = {loss}')
                     # only backward and optimize if in training phase
                     if phase == 'train':
                         # calculate gradients
@@ -194,11 +203,12 @@ try:
                         loss.backward()
                         # update weights
                         optimizer.step()
-
+                    
                 # print("batch", image_count, "loss", loss.item())
                 total_loss[phase] += loss.item()
-
-                # print("batch:", i, "loss:", loss.item())
+                
+                print("batch:", num_batch, "loss:", loss.item())
+                num_batch +=1
                 writer.add_scalar(f"Loss/{phase}", loss.item(), global_step=(step_pos[phase]))
                 step_pos[phase] += 1
 

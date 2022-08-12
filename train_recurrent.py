@@ -36,7 +36,7 @@ batch_size = 32
 loss_type = "MSE"
 phases = ['train', 'val']
 skipLastXImages = 0
-
+skipFirstXImages = 0
 
 parser = argparse.ArgumentParser("Arguments for training")
 parser.add_argument('--project-basepath', '-pb', type=str, default="/home/micha/dev/ml/orb_imitation")
@@ -44,6 +44,7 @@ parser.add_argument('--dataset-basepath', '-db', type=str, default="/media/micha
 parser.add_argument('--dataset-basename', '-n', type=str, default="X4Gates_Circles")
 parser.add_argument('--jobs', '-j', type=int, default=4)
 parser.add_argument('--run', '-r', type=str, default='run0')
+parser.add_argument('--frame', '-f', type=str, choices=['body', 'world'],default='world')
 
 args = parser.parse_args()
 
@@ -53,19 +54,23 @@ dataset_basename = args.dataset_basename
 
 # create path for run
 TB_suffix = args.run
-TB_path = Path(project_basepath, f"runs/ResNet8_bs={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
+TB_path = Path(project_basepath, f"runs/RaceNet8_onegatel1108_Worldframe={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
 if TB_path.exists():
     print("TB_path exists")
     exit(0)
 writer = SummaryWriter(str(TB_path))
 
+if args.frame =='world':
+    from datagen.WorldTrackLoader import RaceTracksDataset, RecurrentRaceTrackDataset
+elif args.frame=='body':
+    from datagen.RaceTrackLoader import RaceTracksDataset,RecurrentRaceTrackDataset
 print("loading dataset...")
-
-train_tracks = [7,0,4,9,6,1,5]
-val_tracks = [8,3]
-
-
-train_set = RecurrentRaceTrackDataset(
+train_tracks = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39]
+# train_tracks = [7,0,4,9,6,1,5, 8, 3]
+# val_tracks = [8,3]
+# train_tracks = [0,1,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,18]
+# val_tracks = [19,20,21,22,23]
+dataset = RecurrentRaceTrackDataset(
                 dataset_basepath,
                 dataset_basename,
                 device=device,
@@ -73,24 +78,43 @@ train_set = RecurrentRaceTrackDataset(
                 imageScale=100,
                 skipTracks=0,
                 grayScale=False,
+                skipFirstXImages = skipFirstXImages,
                 skipLastXImages=skipLastXImages,
                 tracknames=train_tracks
             )
 
-print(len(train_set))
+print(len(dataset))
+split_ratio = 0.8
+train_size = int(split_ratio * len(dataset))
+val_size = len(dataset) - train_size
+train_set, val_set = torch.utils.data.random_split(dataset, [train_size, val_size])
 
-val_set = RecurrentRaceTrackDataset(
-                dataset_basepath,
-                dataset_basename,
-                device=device,
-                maxTracksLoaded=len(val_tracks),
-                imageScale=100,
-                skipTracks=len(train_tracks),
-                grayScale=False,
-                skipLastXImages=skipLastXImages,
-                train=False,
-                tracknames=val_tracks
-            )
+# train_set = RecurrentRaceTrackDataset(
+#                 dataset_basepath,
+#                 dataset_basename,
+#                 device=device,
+#                 maxTracksLoaded=len(train_tracks),
+#                 imageScale=100,
+#                 skipTracks=0,
+#                 grayScale=False,
+#                 skipLastXImages=skipLastXImages,
+#                 tracknames=train_tracks
+#             )
+
+# print(len(train_set))
+
+# val_set = RecurrentRaceTrackDataset(
+#                 dataset_basepath,
+#                 dataset_basename,
+#                 device=device,
+#                 maxTracksLoaded=len(val_tracks),
+#                 imageScale=100,
+#                 skipTracks=len(train_tracks),
+#                 grayScale=False,
+#                 skipLastXImages=skipLastXImages,
+#                 train=False,
+#                 tracknames=val_tracks
+#             )
 
 datasets = {
     'train':
@@ -167,8 +191,9 @@ try:
             dataset = datasets[phase]
 
             for images, labels in tqdm(dataset):  # change images to batches
-                
+                # print(len(dataset))
                 if epoch == 0 and step_pos['train'] == 0:
+                    # print(len(images))
                     img_grid = torchvision.utils.make_grid(images[:, 0, :, :, :])
                     # img_grid = img_grid.permute(1,2,0)
                     writer.add_image('first images', img_grid)
@@ -199,6 +224,9 @@ try:
                 step_pos[phase] += 1
 
             # step_lr_scheduler.step()
+            print(phase)
+            print(batch_count[phase])
+            print(total_loss[phase])
             avg_total_loss = total_loss[phase] / batch_count[phase]
             print("epoch:", epoch, phase, "loss:", avg_total_loss)
             writer.add_scalar("Loss/epoch/" + phase, avg_total_loss, global_step=epoch)
@@ -207,7 +235,7 @@ try:
                 best_loss = avg_total_loss
                 best_model = copy.deepcopy(model.state_dict())
     # writer.add_hparams({'lr': learning_rate, 'batch': batch_size},
-    #                    # {'loss': avg_total_loss}
+    #                     {'loss': avg_total_loss}
     #                    )
     # print("---------------------------")
 except Exception as e:
