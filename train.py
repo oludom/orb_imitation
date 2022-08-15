@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 from select import epoll
 
+from torch.backends import cudnn
+
 from datagen.RaceTrackLoader import RaceTracksDataset
 
 from pathlib import Path
@@ -23,21 +25,25 @@ device = 'cuda'
 epochs = 100
 learning_rate = 0.001
 learning_rate_change = 0.1
-learning_rate_change_epoch = 10
+learning_rate_change_epoch = 5
 batch_size = 32
+num_train_tracks = 84
+num_val_tracks = 25
 
-TB_suffix = "run0"
+TB_suffix = "run11"
 loss_type = "MSE"
 phases = ['train', 'val']
-skipLastXImages = 600
+skipFirstXImages = 0  # 60
+skipLastXImages = 25  # 54
 
 # project_basepath = "/workspaces/imitation"
 project_basepath = "/home/micha/dev/ml/orb_imitation"
-dataset_basepath = "/media/micha/eSSD/datasets"
+# dataset_basepath = "/media/micha/eSSD/datasets"
 # dataset_basepath = "/home/micha/dev/datasets/droneracing"
-# dataset_basepath = "/data/datasets"
+dataset_basepath = "/data/datasets"
 # dataset_basename = "X4Gates_Circle_right_"
-dataset_basename = "X4Gates_Circles"
+# dataset_basename = "X4Gates_Circles"
+dataset_basename = "X1Gate100"
 # dataset_basename = "X4Gates_Circle_2"
 
 # create path for run
@@ -56,11 +62,12 @@ datasets = {
                 dataset_basepath,
                 dataset_basename,
                 device=device,
-                maxTracksLoaded=12,
+                maxTracksLoaded=num_train_tracks,
                 imageScale=100,
                 skipTracks=0,
                 grayScale=False,
-                skipLastXImages=skipLastXImages
+                skipLastXImages=skipLastXImages,
+                skipFirstXImages=skipFirstXImages
             ),
             batch_size=batch_size,
             shuffle=True
@@ -71,11 +78,12 @@ datasets = {
                 dataset_basepath,
                 dataset_basename,
                 device=device,
-                maxTracksLoaded=6,
+                maxTracksLoaded=num_val_tracks,
                 imageScale=100,
-                skipTracks=12,
+                skipTracks=num_train_tracks,
                 grayScale=False,
-                skipLastXImages=skipLastXImages
+                skipLastXImages=skipLastXImages,
+                skipFirstXImages=skipFirstXImages
             ),
             batch_size=batch_size,
             shuffle=True
@@ -86,13 +94,13 @@ dev = torch.device(device)
 
 # model = ImageCNN4(device)
 # model = dn.DenseNetCustom()
-model = ResNet8(input_dim=3, output_dim=4, f=.5)
+model = ResNet8(input_dim=3, output_dim=4, f=.25)
 model = model.to(dev)
 
 
-# if device == 'cuda':
-#     model = torch.nn.DataParallel(model)
-#     cudnn.benchmark = True
+if device == 'cuda':
+    model = torch.nn.DataParallel(model)
+    cudnn.benchmark = True
 
 def schedule(epoch):
     """ Schedule learning rate according to epoch # """
@@ -178,7 +186,9 @@ try:
 
             if phase == 'val' and avg_total_loss < best_loss:
                 best_loss = avg_total_loss
-                best_model = copy.deepcopy(model.state_dict())
+            current_model = copy.deepcopy(model.state_dict())
+            torch.save(current_model, str(TB_path) + f"/epoch{epoch}.pth")
+
     # writer.add_hparams({'lr': learning_rate, 'batch': batch_size},
     #                    # {'loss': avg_total_loss}
     #                    )
