@@ -83,7 +83,7 @@ class ResNet8(nn.Module):
             nn.ReLU(),
             nn.Dropout(0.5),
         )
-        self.dense = nn.Linear(in_features=int(2240*4*f), out_features=256)
+        self.dense = nn.Linear(in_features=int(1280*4*f), out_features=256)
         self.out = nn.Sequential(
             nn.ReLU(),
             nn.Linear(in_features=256, out_features=output_dim)
