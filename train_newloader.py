@@ -53,7 +53,7 @@ dataset_basename = args.dataset_basename
 
 # create path for run
 TB_suffix = args.run
-TB_path = Path(project_basepath, f"runs/ResNet8_test_onegateL1108_world_frame={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
+TB_path = Path(project_basepath, f"runs/ResNet8_F=1_dropout=0.2_1308_onegate180_world_frame={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
 if TB_path.exists():
     print("TB_path exists")
     exit(0)
@@ -69,13 +69,14 @@ print("loading dataset...")
 
 train_tracks = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39]
 # val_tracks = [8,3]
+maxTrackLoaded = 180
 
 
 dataset = RaceTracksDataset(
                 dataset_basepath,
                 dataset_basename,
                 device=device,
-                maxTracksLoaded=len(train_tracks),
+                maxTracksLoaded=maxTrackLoaded,
                 imageScale=100,
                 skipTracks=0,
                 grayScale=False,
@@ -191,11 +192,11 @@ try:
                 with torch.set_grad_enabled(phase == 'train'):
                     # predict and calculate loss
                     preds = model(images)
-                    print(len(preds))
-                    print(f'pred_x = {preds[0]}, pred_y = {preds[1]}, pred_z = {preds[2]}, pred_yaw = {preds[3]}')
-                    print(f'label_x = {labels[0]}')
+                    # print(len(preds))
+                    # print(f'pred_x = {preds[0]}, pred_y = {preds[1]}, pred_z = {preds[2]}, pred_yaw = {preds[3]}')
+                    # print(f'label_x = {labels[0]}')
                     loss = lossfunction(preds, labels)
-                    print(f'loss = {loss}')
+                    # print(f'loss = {loss}')
                     # only backward and optimize if in training phase
                     if phase == 'train':
                         # calculate gradients
@@ -207,7 +208,7 @@ try:
                 # print("batch", image_count, "loss", loss.item())
                 total_loss[phase] += loss.item()
                 
-                print("batch:", num_batch, "loss:", loss.item())
+                # print("batch:", num_batch, "loss:", loss.item())
                 num_batch +=1
                 writer.add_scalar(f"Loss/{phase}", loss.item(), global_step=(step_pos[phase]))
                 step_pos[phase] += 1

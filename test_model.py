@@ -56,7 +56,7 @@ parser.add_argument('--architecture','-arc', type=str, choices=["resnet8", "race
 arg = parser.parse_args()
 arc = arg.architecture
 model_weight_path = arg.weight
-images_dir = Path("/media/data2/teamICRA/X4Gates_Circles_rl18tracks/Onegate-l-3/track0/image_left")
+images_dir = Path("/media/data2/teamICRA/X4Gates_Circles_rl18tracks/Onegate-l-3/track1/image_left")
 device = "cpu"
 if arc == 'resnet8':
     model = ResNet8(input_dim=3, output_dim=4, f=.5)
@@ -72,14 +72,18 @@ device = device
 dev = torch.device(device)
 model.to(dev)
 model.eval()
+
 for img in os.listdir(images_dir):
     image_path = images_dir + '/' + Path(img)
     image = cv2.imread(image_path)
-    print(type(image))
-    images = torch.from_numpy(image)
-    pred = model(images)
+    # print(type(image))
+    image = transforms.Compose([
+            transforms.ToTensor(),
+        ])(image)
+    image = torch.unsqueeze(image, dim= 0)
+    pred = model(image)
     pred = pred.to(torch.device('cpu'))
     pred = pred.detach().numpy()
     pred = pred[0]
-    print(pred[0])
+    print(pred)
         

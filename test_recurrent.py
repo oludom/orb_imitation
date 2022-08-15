@@ -40,8 +40,8 @@ dataset_basename = args.dataset_basename
 
 print("loading dataset...")
 
-train_tracks = [0,1,2,3,4,5,6,7]
-val_tracks = [8,9]
+train_tracks = [7,0,4,9,6,1,5]
+val_tracks = [8,3]
 
 datasets = {
     'train':
@@ -50,7 +50,7 @@ datasets = {
                 dataset_basepath,
                 dataset_basename,
                 device=device,
-                maxTracksLoaded=12,
+                maxTracksLoaded=len(train_tracks),
                 imageScale=100,
                 skipTracks=0,
                 grayScale=False,
@@ -65,11 +65,12 @@ datasets = {
                 dataset_basepath,
                 dataset_basename,
                 device=device,
-                maxTracksLoaded=6,
+                maxTracksLoaded=len(val_tracks),
                 imageScale=100,
-                skipTracks=12,
+                skipTracks=len(train_tracks),
                 grayScale=False,
-                skipLastXImages=skipLastXImages
+                skipLastXImages=skipLastXImages,
+                train=False
             ),
             batch_size=batch_size,
             shuffle=True
