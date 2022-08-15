@@ -27,10 +27,10 @@ learning_rate = 0.001
 learning_rate_change = 0.1
 learning_rate_change_epoch = 5
 batch_size = 32
-num_train_tracks = 84
-num_val_tracks = 25
+num_train_tracks = 37
+num_val_tracks = 15
 
-TB_suffix = "run11"
+TB_suffix = "run21"
 loss_type = "MSE"
 phases = ['train', 'val']
 skipFirstXImages = 0  # 60
@@ -43,7 +43,7 @@ project_basepath = "/home/micha/dev/ml/orb_imitation"
 dataset_basepath = "/data/datasets"
 # dataset_basename = "X4Gates_Circle_right_"
 # dataset_basename = "X4Gates_Circles"
-dataset_basename = "X1Gate100"
+dataset_basename = "X1GateDepth"
 # dataset_basename = "X4Gates_Circle_2"
 
 # create path for run
@@ -123,7 +123,7 @@ for el in phases:
 
 # print("batch count:", len(train_loader))
 
-summary(model, (3, 200, 300), device=device)
+summary(model, (3, 144, 256), device=device)
 
 best_model = copy.deepcopy(model.state_dict())
 best_loss = 0.0
