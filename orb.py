@@ -4,7 +4,6 @@ import cv2
 def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
     # initialize the dimensions of the image to be resized and
     # grab the image size
-    dim = None
     (h, w) = image.shape[:2]
 
     # if both the width and height are None, then return the
@@ -52,24 +51,25 @@ def get_orb(img_left, img_right=None, n_features=1000, max_matches=100):
     return kp_left, des_left, None, None, None
 
 
-# example for mono image
-img = cv2.imread("examples/16327480994671.png", 1)
-img = image_resize(img, width=600)
+if __name__ == '__main__':
+    # example for mono image
+    img = cv2.imread("examples/16327480994671.png", 1)
+    img = image_resize(img, width=600)
 
-kp, des, _, _, _ = get_orb(img)
+    kp, des, _, _, _ = get_orb(img)
 
-imgg = cv2.drawKeypoints(img, kp, None)
+    imgg = cv2.drawKeypoints(img, kp, None)
 
-cv2.imwrite("examples/orb.png", imgg)
+    cv2.imwrite("examples/orb.png", imgg)
 
-# example for stereo images
-image_left = cv2.imread("examples/image250_left.png", 1)
-image_right = cv2.imread("examples/image250_right.png", 1)
-image_left = image_resize(image_left, width=600)
-image_right = image_resize(image_right, width=600)
+    # example for stereo images
+    image_left = cv2.imread("examples/image250_left.png", 1)
+    image_right = cv2.imread("examples/image250_right.png", 1)
+    image_left = image_resize(image_left, width=600)
+    image_right = image_resize(image_right, width=600)
 
-lkp, ldes, rkp, rdes, matches = get_orb(image_left, image_right, max_matches=250)
+    lkp, ldes, rkp, rdes, matches = get_orb(image_left, image_right, max_matches=250)
 
-imgg = cv2.drawMatches(image_left, lkp, image_right, rkp, matches, None)
+    imgg = cv2.drawMatches(image_left, lkp, image_right, rkp, matches, None)
 
-cv2.imwrite("examples/orb_stereo.png", imgg)
+    cv2.imwrite("examples/orb_stereo.png", imgg)
