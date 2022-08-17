@@ -14,12 +14,16 @@ import torch.optim as optim
 
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
+import torchvision.transforms as transforms
 
 from ResNet8 import ResNet8
 import torchvision.models.densenet
 
+from calculate_mean_std import calculate_mean_std
+
 torch.set_printoptions(linewidth=120)
 torch.set_grad_enabled(True)
+# torch.multiprocessing.set_start_method('spawn')
 
 device = 'cpu'
 epochs = 100
@@ -27,12 +31,18 @@ learning_rate = 0.001
 learning_rate_change = 0.1
 learning_rate_change_epoch = 5
 batch_size = 32
-num_input_channels = 4
+resnet_factor = 0.25
 num_train_tracks = 37
 num_val_tracks = 15
 jobs = 8
 
-TB_suffix = "run20"
+input_channels = {
+    'rgb': False,
+    'depth': True,
+    'orb': True,
+}
+
+TB_suffix = "run0"
 loss_type = "MSE"
 phases = ['train', 'val']
 skipFirstXImages = 0  # 60
@@ -48,12 +58,50 @@ dataset_basepath = "/data/datasets"
 dataset_basename = "X1GateDepth"
 # dataset_basename = "X4Gates_Circle_2"
 
+num_input_channels = (input_channels['rgb'] * 3) + \
+                     (input_channels['depth'] * 1) + \
+                     (input_channels['orb'] * 1)
+
+if num_input_channels < 1:
+    print("No input channels selected")
+    exit(0)
+
+
+
 # create path for run
-TB_path = Path(project_basepath, f"runs/ResNet8_bs={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
+itypes = [
+    'rgb' if input_channels['rgb'] else '',
+    'd' if input_channels['depth'] else '',
+    'o' if input_channels['orb'] else ''
+]
+itypes = ''.join(itypes)
+TB_path = Path(project_basepath, f"runs/ResNet8_l={itypes}_f={resnet_factor}_bs={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
 if TB_path.exists():
     print("TB_path exists")
     exit(0)
 writer = SummaryWriter(str(TB_path))
+
+tf = None
+if itypes == 'rgb' or itypes == 'rgbo':
+    tf = transforms.Compose([
+        transforms.Normalize(
+            (0.4694, 0.4853, 0.4915),
+            (0.2693, 0.2981, 0.3379))
+    ])
+elif itypes == 'rgbd' or itypes == 'rgbdo':
+    tf = transforms.Compose([
+        transforms.Normalize(
+            (0.4694,  0.4853,  0.4915, 49.0911),
+            (2.6934e-01, 2.9809e-01, 3.3785e-01, 6.9964e+02))
+    ])
+elif itypes == 'd' or itypes == 'do':
+    tf = transforms.Compose([
+        transforms.Normalize(
+            (49.0911),
+            (6.9964e+02))
+    ])
+
+
 
 print("loading dataset...")
 
@@ -68,13 +116,16 @@ datasets = {
                 imageScale=100,
                 skipTracks=0,
                 grayScale=False,
+                imageTransforms=tf,
                 skipLastXImages=skipLastXImages,
                 skipFirstXImages=skipFirstXImages,
-                loadDepth=True
+                loadRGB=input_channels['rgb'],
+                loadDepth=input_channels['depth'],
+                loadOrb=input_channels['orb']
             ),
             batch_size=batch_size,
             shuffle=True,
-            num_workers=jobs
+            # num_workers=jobs
         ),
     'val':
         torch.utils.data.DataLoader(
@@ -86,21 +137,22 @@ datasets = {
                 imageScale=100,
                 skipTracks=num_train_tracks,
                 grayScale=False,
+                imageTransforms=tf,
                 skipLastXImages=skipLastXImages,
                 skipFirstXImages=skipFirstXImages,
-                loadDepth=True
+                loadRGB=input_channels['rgb'],
+                loadDepth=input_channels['depth'],
+                loadOrb=input_channels['orb']
             ),
             batch_size=batch_size,
             shuffle=True,
-            num_workers=jobs
+            # num_workers=jobs
         )
 }
 
 dev = torch.device(device)
 
-# model = ImageCNN4(device)
-# model = dn.DenseNetCustom()
-model = ResNet8(input_dim=num_input_channels, output_dim=4, f=.25)
+model = ResNet8(input_dim=num_input_channels, output_dim=4, f=resnet_factor)
 model = model.to(dev)
 
 
@@ -111,11 +163,6 @@ model = model.to(dev)
 def schedule(epoch):
     """ Schedule learning rate according to epoch # """
     return learning_rate * learning_rate_change ** int(epoch / learning_rate_change_epoch)
-
-
-# train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
-# optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=2e-4)
-# step_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
 
 
 lossfunction = nn.MSELoss()
@@ -130,6 +177,11 @@ for el in phases:
 # print("batch count:", len(train_loader))
 
 summary(model, (num_input_channels, 144, 256), device=device)
+
+# print mean and std of dataset
+# mean, std = calculate_mean_std(datasets['train'])
+# print("mean:", mean, "std:", std)
+# exit(0)
 
 best_model = copy.deepcopy(model.state_dict())
 best_loss = 0.0
