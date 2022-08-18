@@ -14,44 +14,27 @@ import torch.optim as optim
 
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
+import torchvision.transforms as transforms
 
 from ResNet8 import ResNet8
 import torchvision.models.densenet
 
+from calculate_mean_std import calculate_mean_std
+from config import *
+
 torch.set_printoptions(linewidth=120)
 torch.set_grad_enabled(True)
+# torch.multiprocessing.set_start_method('spawn')
 
-device = 'cuda'
-epochs = 100
-learning_rate = 0.001
-learning_rate_change = 0.1
-learning_rate_change_epoch = 5
-batch_size = 32
-num_train_tracks = 37
-num_val_tracks = 15
 
-TB_suffix = "run21"
-loss_type = "MSE"
-phases = ['train', 'val']
-skipFirstXImages = 0  # 60
-skipLastXImages = 25  # 54
 
-# project_basepath = "/workspaces/imitation"
-project_basepath = "/home/micha/dev/ml/orb_imitation"
-# dataset_basepath = "/media/micha/eSSD/datasets"
-# dataset_basepath = "/home/micha/dev/datasets/droneracing"
-dataset_basepath = "/data/datasets"
-# dataset_basename = "X4Gates_Circle_right_"
-# dataset_basename = "X4Gates_Circles"
-dataset_basename = "X1GateDepth"
-# dataset_basename = "X4Gates_Circle_2"
-
-# create path for run
-TB_path = Path(project_basepath, f"runs/ResNet8_bs={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
+TB_path = Path(project_basepath, f"runs/ResNet8_l={itypes}_f={resnet_factor}_bs={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
 if TB_path.exists():
     print("TB_path exists")
     exit(0)
 writer = SummaryWriter(str(TB_path))
+
+
 
 print("loading dataset...")
 
@@ -66,11 +49,16 @@ datasets = {
                 imageScale=100,
                 skipTracks=0,
                 grayScale=False,
+                imageTransforms=tf,
                 skipLastXImages=skipLastXImages,
-                skipFirstXImages=skipFirstXImages
+                skipFirstXImages=skipFirstXImages,
+                loadRGB=input_channels['rgb'],
+                loadDepth=input_channels['depth'],
+                loadOrb=input_channels['orb']
             ),
             batch_size=batch_size,
-            shuffle=True
+            shuffle=True,
+            # num_workers=jobs
         ),
     'val':
         torch.utils.data.DataLoader(
@@ -82,34 +70,32 @@ datasets = {
                 imageScale=100,
                 skipTracks=num_train_tracks,
                 grayScale=False,
+                imageTransforms=tf,
                 skipLastXImages=skipLastXImages,
-                skipFirstXImages=skipFirstXImages
+                skipFirstXImages=skipFirstXImages,
+                loadRGB=input_channels['rgb'],
+                loadDepth=input_channels['depth'],
+                loadOrb=input_channels['orb']
             ),
             batch_size=batch_size,
-            shuffle=True
+            shuffle=True,
+            # num_workers=jobs
         )
 }
 
 dev = torch.device(device)
 
-# model = ImageCNN4(device)
-# model = dn.DenseNetCustom()
-model = ResNet8(input_dim=3, output_dim=4, f=.25)
+model = ResNet8(input_dim=num_input_channels, output_dim=4, f=resnet_factor)
 model = model.to(dev)
 
 
-if device == 'cuda':
-    model = torch.nn.DataParallel(model)
-    cudnn.benchmark = True
+# if device == 'cuda':
+#     model = torch.nn.DataParallel(model)
+#     cudnn.benchmark = True
 
 def schedule(epoch):
     """ Schedule learning rate according to epoch # """
     return learning_rate * learning_rate_change ** int(epoch / learning_rate_change_epoch)
-
-
-# train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
-# optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=2e-4)
-# step_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
 
 
 lossfunction = nn.MSELoss()
@@ -123,7 +109,12 @@ for el in phases:
 
 # print("batch count:", len(train_loader))
 
-summary(model, (3, 144, 256), device=device)
+summary(model, (num_input_channels, 144, 256), device=device)
+
+# print mean and std of dataset
+# mean, std = calculate_mean_std(datasets['train'])
+# print("mean:", mean, "std:", std)
+# exit(0)
 
 best_model = copy.deepcopy(model.state_dict())
 best_loss = 0.0
