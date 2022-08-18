@@ -27,6 +27,7 @@ learning_rate = 0.001
 learning_rate_change = 0.1
 learning_rate_change_epoch = 5
 batch_size = 32
+num_input_channels = 4
 num_train_tracks = 37
 num_val_tracks = 15
 jobs = 8
@@ -49,9 +50,9 @@ dataset_basename = "X1GateDepth"
 
 # create path for run
 TB_path = Path(project_basepath, f"runs/ResNet8_bs={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
-# if TB_path.exists():
-#     print("TB_path exists")
-#     exit(0)
+if TB_path.exists():
+    print("TB_path exists")
+    exit(0)
 writer = SummaryWriter(str(TB_path))
 
 print("loading dataset...")
@@ -99,7 +100,7 @@ dev = torch.device(device)
 
 # model = ImageCNN4(device)
 # model = dn.DenseNetCustom()
-model = ResNet8(input_dim=4, output_dim=4, f=.25)
+model = ResNet8(input_dim=num_input_channels, output_dim=4, f=.25)
 model = model.to(dev)
 
 
@@ -128,7 +129,7 @@ for el in phases:
 
 # print("batch count:", len(train_loader))
 
-summary(model, (4, 144, 256), device=device)
+summary(model, (num_input_channels, 144, 256), device=device)
 
 best_model = copy.deepcopy(model.state_dict())
 best_loss = 0.0
