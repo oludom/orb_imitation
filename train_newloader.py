@@ -61,7 +61,7 @@ writer = SummaryWriter(str(TB_path))
 
 
 if args.frame =='world':
-    from datagen.WorldTrackLoader import RaceTracksDataset
+    from datagen.MyTrackLoader import RaceTracksDataset
 elif args.frame=='body':
     from datagen.RaceTrackLoader import RaceTracksDataset
 
