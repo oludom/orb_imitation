@@ -24,7 +24,7 @@ torch.set_printoptions(linewidth=120)
 torch.set_grad_enabled(True)
 
 device = 'cuda'
-epochs = 100
+epochs = 50
 learning_rate = 0.001
 learning_rate_change = 0.1
 learning_rate_change_epoch = 10
@@ -53,7 +53,7 @@ dataset_basename = args.dataset_basename
 
 # create path for run
 TB_suffix = args.run
-TB_path = Path(project_basepath, f"runs/ResNet8_F=1_dropout=0.2_1308_onegate180_world_frame={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
+TB_path = Path(project_basepath, f"runs/ResNet32_ScaleV_body={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
 if TB_path.exists():
     print("TB_path exists")
     exit(0)
@@ -125,7 +125,7 @@ dev = torch.device(device)
 
 # model = ImageCNN4(device)
 # model = dn.DenseNetCustom()
-model = ResNet8(input_dim=3, output_dim=4, f=.5)
+model = ResNet8(input_dim=3, output_dim=4, f=1)
 model = model.to(dev)
 
 
