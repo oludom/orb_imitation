@@ -3,6 +3,7 @@
 import torchvision.transforms as transforms
 
 device = 'cuda'
+parallel = True
 epochs = 10
 learning_rate = 0.001
 learning_rate_change = 0.1
@@ -11,16 +12,16 @@ batch_size = 32
 resnet_factor = 0.25
 num_train_tracks = 20
 num_val_tracks = 5
-jobs = 8
+jobs = 1
 
 input_channels = {
-    'rgb': False,
+    'rgb': True,
     'depth': False,
-    'orb': True,
+    'orb': False,
     'gray': False
 }
 
-TB_suffix = "run0"
+TB_suffix = "run1"
 loss_type = "MSE"
 phases = ['train', 'val']
 skipFirstXImages = 0  # 60
