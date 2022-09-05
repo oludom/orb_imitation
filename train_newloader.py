@@ -21,6 +21,7 @@ import torchvision.models.densenet
 import argparse
 from tqdm import tqdm
 
+  
 
 def train_main(args, run : int):
     learning_rate = 0.001
@@ -33,7 +34,6 @@ def train_main(args, run : int):
     torch.set_grad_enabled(True)
 
     # create wandb project
-
 #     wandb.init(project="DAgger", entity="dungtd2403")
 #     wandb.config = {
 #     "learning_rate": 0.001,
@@ -118,11 +118,11 @@ def train_main(args, run : int):
         """ Schedule learning rate according to epoch # """
         return learning_rate * learning_rate_change ** int(epoch / learning_rate_change_epoch)
 
-    def mean_std(loader):
-        images, labels = next(iter(loader))
-        # shape of images = [b,c,w,h]
-        mean, std = images.mean([0,2,3]), images.std([0,2,3])
-        return mean, std
+    # def mean_std(loader):
+    #     images, labels = next(iter(loader))
+    #     # shape of images = [b,c,w,h]
+    #     mean, std = images.mean([0,2,3]), images.std([0,2,3])
+    #     return mean, std
 
     lossfunction = nn.MSELoss()
 
@@ -158,8 +158,8 @@ def train_main(args, run : int):
                     model.eval()  # Set model to evaluate mode
 
                 dataset = datasets[phase]
-                mean , std = mean_std(dataset)
-                print(f"mean : {mean}, std: {std}")
+                # mean , std = mean_std(dataset)
+                # print(f"mean : {mean}, std: {std}")
 
                 num_batch = 0
 
@@ -169,11 +169,11 @@ def train_main(args, run : int):
                         img_grid = torchvision.utils.make_grid(images)
                         # img_grid = img_grid.permute(1,2,0)
                         writer.add_image('first images', img_grid)
-                    images = transforms.Compose([
-                        transforms.Normalize(
-                        mean,
-                        std)
-                     ])(images)
+                    # images = transforms.Compose([
+                    #     transforms.Normalize(
+                    #     mean,
+                    #     std)
+                    #  ])(images)
                     images = images.to(dev)
                     labels = labels.to(dev)
 
