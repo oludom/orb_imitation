@@ -28,7 +28,7 @@ torch.set_grad_enabled(True)
 
 
 
-TB_path = Path(project_basepath, f"runs/ResNet8_l={itypes}_f={resnet_factor}_bs={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
+TB_path = Path(project_basepath, f"runs/ResNet8_ds={dataset_basename}_l={itypes}_f={resnet_factor}_bs={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
 if TB_path.exists():
     print("TB_path exists")
     exit(0)
@@ -89,9 +89,9 @@ model = ResNet8(input_dim=num_input_channels, output_dim=4, f=resnet_factor)
 model = model.to(dev)
 
 
-# if device == 'cuda':
-#     model = torch.nn.DataParallel(model)
-#     cudnn.benchmark = True
+if device == 'cuda':
+    model = torch.nn.DataParallel(model)
+    cudnn.benchmark = True
 
 def schedule(epoch):
     """ Schedule learning rate according to epoch # """
@@ -140,10 +140,10 @@ try:
 
             for images, labels in dataset:  # change images to batches
 
-                if epoch == 0 and step_pos['train'] == 0:
-                    img_grid = torchvision.utils.make_grid(images)
-                    # img_grid = img_grid.permute(1,2,0)
-                    writer.add_image('first images', img_grid)
+                # if epoch == 0 and step_pos['train'] == 0:
+                #     img_grid = torchvision.utils.make_grid(images)
+                #     # img_grid = img_grid.permute(1,2,0)
+                #     writer.add_image('first images', img_grid)
 
                 images = images.to(dev)
                 labels = labels.to(dev)

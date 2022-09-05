@@ -3,27 +3,28 @@
 import torchvision.transforms as transforms
 
 device = 'cuda'
-epochs = 100
+epochs = 10
 learning_rate = 0.001
 learning_rate_change = 0.1
 learning_rate_change_epoch = 5
 batch_size = 32
 resnet_factor = 0.25
-num_train_tracks = 150
-num_val_tracks = 50
+num_train_tracks = 20
+num_val_tracks = 5
 jobs = 8
 
 input_channels = {
-    'rgb': True,
+    'rgb': False,
     'depth': False,
-    'orb': False,
+    'orb': True,
+    'gray': False
 }
 
-TB_suffix = "run1"
+TB_suffix = "run0"
 loss_type = "MSE"
 phases = ['train', 'val']
 skipFirstXImages = 0  # 60
-skipLastXImages = 25  # 54
+skipLastXImages = 0  # 54
 
 # project_basepath = "/workspaces/imitation"
 project_basepath = "/home/micha/dev/ml/orb_imitation"
@@ -32,11 +33,16 @@ project_basepath = "/home/micha/dev/ml/orb_imitation"
 dataset_basepath = "/data/datasets"
 # dataset_basename = "X4Gates_Circle_right_"
 # dataset_basename = "X4Gates_Circles"
-dataset_basename = "X1Gate200"
+dataset_basename = "X4Gates_Circle_right"
 # dataset_basename = "X4Gates_Circle_2"
 
-dataset_mean = (0.4697,  0.4897,  0.4988, 49.4976)
-dataset_std = (2.7118e-01, 2.9868e-01, 3.3708e-01, 6.8829e+02)
+# X1Gate200
+# dataset_mean = (0.4697,  0.4897,  0.4988, 49.4976)
+# dataset_std = (2.7118e-01, 2.9868e-01, 3.3708e-01, 6.8829e+02)
+
+# X4Gates_Circle_right
+dataset_mean = (0.4699,  0.4793,  0.4848, 67.2920)
+dataset_std = (2.5673e-01, 2.9010e-01, 3.2995e-01, 7.7903e+02)
 
 num_input_channels = (input_channels['rgb'] * 3) + \
                      (input_channels['depth'] * 1) + \
