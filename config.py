@@ -10,14 +10,14 @@ learning_rate_change = 0.1
 learning_rate_change_epoch = 5
 batch_size = 32
 resnet_factor = 0.25
-num_train_tracks = 20
-num_val_tracks = 5
-jobs = 1
+num_train_tracks = 140
+num_val_tracks = 20
+jobs = 8
 
 input_channels = {
     'rgb': True,
     'depth': False,
-    'orb': False,
+    'orb': False
 }
 
 TB_suffix = "run0"
@@ -30,10 +30,10 @@ skipLastXImages = 0  # 54
 project_basepath = "/home/kristoffer/dev/orb_imitation"
 # dataset_basepath = "/media/micha/eSSD/datasets"
 # dataset_basepath = "/home/micha/dev/datasets/droneracing"
-dataset_basepath = "/home/kristoffer/dev/dataset"
+dataset_basepath = "/data/datasets/X1Gate8tracks"
 # dataset_basename = "X4Gates_Circle_right_"
 # dataset_basename = "X4Gates_Circles"
-dataset_basename = "X4Gates_Circle_dagger"
+dataset_basename = "X1Gate8tracks"
 # dataset_basename = "X4Gates_Circle_2"
 
 # X1Gate200
