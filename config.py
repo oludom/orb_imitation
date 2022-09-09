@@ -1,5 +1,3 @@
-
-
 import torchvision.transforms as transforms
 
 device = 'cuda'
@@ -45,7 +43,7 @@ dataset_basename = "X1Gate8tracks"
 # dataset_std = (2.5673e-01, 2.9010e-01, 3.2995e-01, 7.7903e+02)
 
 # X1Gate8tracks
-dataset_mean = (0.4660,  0.4733,  0.4792, 78.8772)
+dataset_mean = (0.4660, 0.4733, 0.4792, 78.8772)
 dataset_std = (2.5115e-01, 2.8758e-01, 3.2971e-01, 8.9808e+02)
 
 num_input_channels = (input_channels['rgb'] * 3) + \
@@ -56,8 +54,6 @@ if num_input_channels < 1:
     print("No input channels selected")
     exit(0)
 
-
-
 # create path for run
 itypes = [
     'rgb' if input_channels['rgb'] else '',
@@ -65,7 +61,6 @@ itypes = [
     'o' if input_channels['orb'] else ''
 ]
 itypes = ''.join(itypes)
-
 
 tf = None
 if itypes == 'rgb' or itypes == 'rgbo':
@@ -87,10 +82,7 @@ elif itypes == 'd' or itypes == 'do':
             dataset_std[3])
     ])
 
-
-
 # dagger config
 train_dagger = True
 initial_weight_path = "/home/kristoffer/dev/orb_imitation/datagen/eval/runs/X1Gate_evaluation/ResNet8_ds=X1Gate8tracks_l=rgb_f=0.25_bs=32_lt=MSE_lr=0.001_c=run0/epoch5.pth"
 skip_tracks = 10
-
