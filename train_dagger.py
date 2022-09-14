@@ -4,7 +4,8 @@ from sklearn.utils import shuffle
 
 sys.path.insert(0, './datagen')
 
-from DaggerClient import DaggerClient
+# from DaggerClient import DaggerClient
+from datagen.DaggerClient import DaggerClient
 from train import *  # also imports config
 
 from copy import deepcopy
@@ -18,12 +19,17 @@ if __name__ == "__main__":
 
     import contextlib
 
+    # beta scheduler
     beta = 1
+    weight = 0.1
+    beta_rate = 0.42
+    def schedular_rate(round):
+        return (weight*beta) /((round +1) * beta_rate)
 
     # tb path handling
     TB_path, writer = get_path_for_run(config.project_basepath, config.dataset_basename, config.itypes,
                                        config.resnet_factor, config.batch_size, config.loss_type, config.learning_rate,
-                                       config.TB_suffix)
+                                       config.TB_suffix,config.beta_rate)
 
     dev = torch.device(config.device)
 
@@ -89,8 +95,8 @@ if __name__ == "__main__":
             model = train_epoch(i, len(configurations), model, config.phases, config.learning_rate,
                                 config.learning_rate_change, config.learning_rate_change_epoch, datasets, dev,
                                 lossfunction, writer, step_pos, TB_path, batch_count)
-
-            beta = 1 / (i + 2)
+            change_rate = schedular_rate(i)
+            beta -= change_rate
 
     except Exception as e:
         raise e

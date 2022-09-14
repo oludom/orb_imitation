@@ -6,7 +6,7 @@ from datagen.RaceTrackLoader import RaceTracksDataset
 
 from pathlib import Path
 import copy
-
+import tqdm
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -76,7 +76,8 @@ def load_dataset_train_val_split(dataset_basepath, dataset_basename, device, max
 def load_dataset(dataset_basepath, dataset_basename, device, num_train_tracks, num_val_tracks, input_channels,
                  skipFirstXImages, skipLastXImages, batch_size, tf, jobs=1):
     print("loading dataset...")
-
+    print(dataset_basepath)
+    print(dataset_basename)
     datasets = {
         'train':
             torch.utils.data.DataLoader(
@@ -136,10 +137,10 @@ def print_mean_std(datasets):
     print("mean:", mean, "std:", std)
     exit(0)
 
-def get_path_for_run(project_basepath, dataset_basename, itypes, resnet_factor, batch_size, loss_type, learning_rate, TB_suffix):
+def get_path_for_run(project_basepath, dataset_basename, itypes, resnet_factor, batch_size, loss_type, learning_rate, TB_suffix, beta_rate):
     TB_path = Path(project_basepath,
                 f"runs/ResNet8_ds={dataset_basename}_l={itypes}_f={resnet_factor}"
-                f"_bs={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
+                f"_bs={batch_size}_lt={loss_type}_lr={learning_rate}beta_rate={beta_rate}__c={TB_suffix}_train_yaw")
     if TB_path.exists():
         print("TB_path exists")
         exit(0)
@@ -148,6 +149,15 @@ def get_path_for_run(project_basepath, dataset_basename, itypes, resnet_factor, 
 
 
 def train_epoch(epoch, epochs, model, phases, learning_rate, learning_rate_change, learning_rate_change_epoch, datasets, dev, lossfunction, writer, step_pos, TB_path, batch_count):
+
+    import wandb
+
+    wandb.init(project="dagger_micha", entity="dungtd2403")
+    wandb.config = {
+    "learning_rate": 0.001,
+    "epochs": 1,
+    "batch_size": 32
+}
 
     total_loss = {}
     for el in phases:
@@ -166,10 +176,12 @@ def train_epoch(epoch, epochs, model, phases, learning_rate, learning_rate_chang
             model.train()  # Set model to training mode
         else:
             model.eval()  # Set model to evaluate mode
+        
+        wandb.watch(model, log_freq=100)
 
         dataset = datasets[phase]
 
-        for images, labels in dataset:  # change images to batches
+        for step, (images, labels) in enumerate(dataset):  # change images to batches
 
             # if epoch == 0 and step_pos['train'] == 0:
             #     img_grid = torchvision.utils.make_grid(images)
@@ -200,7 +212,13 @@ def train_epoch(epoch, epochs, model, phases, learning_rate, learning_rate_chang
             # print("batch:", i, "loss:", loss.item())
             writer.add_scalar(f"Loss/{phase}", loss.item(), global_step=(step_pos[phase]))
             step_pos[phase] += 1
-
+            n_steps_per_epoch = len(dataset)
+            metrics = {f"{phase}/batch_loss": loss, 
+                                f"{phase}/epoch": (step + 1 + (n_steps_per_epoch * epoch)) / n_steps_per_epoch, 
+                            }
+            if step + 1 < n_steps_per_epoch:
+                        # 🐝 Log train metrics to wandb 
+                        wandb.log(metrics)
         # step_lr_scheduler.step()
         avg_total_loss = total_loss[phase] / batch_count[phase]
         print("epoch:", epoch, phase, "loss:", avg_total_loss)
@@ -241,9 +259,9 @@ def train(project_basepath,
           *args,
           **kwargs
           ):
-
+    beta_rate = 0.42
     # tb path handling
-    TB_path, writer = get_path_for_run(project_basepath, dataset_basename, itypes, resnet_factor, batch_size, loss_type, learning_rate, TB_suffix)
+    TB_path, writer = get_path_for_run(project_basepath, dataset_basename, itypes, resnet_factor, batch_size, loss_type, learning_rate, TB_suffix,beta_rate)
 
     datasets = load_dataset(dataset_basepath, dataset_basename, device, num_train_tracks, num_val_tracks,
                             input_channels, skipFirstXImages, skipLastXImages, batch_size, tf, jobs)
