@@ -2,7 +2,7 @@ import torchvision.transforms as transforms
 
 device = 'cuda'
 parallel = True
-epochs = 10
+epochs = 30
 learning_rate = 0.001
 learning_rate_change = 0.1
 learning_rate_change_epoch = 5
@@ -11,27 +11,27 @@ resnet_factor = 0.25
 num_train_tracks = 140
 num_val_tracks = 20
 jobs = 8
-
+beta_rate = 0.38
 input_channels = {
     'rgb': True,
-    'depth': False,
-    'orb': False
+    'depth': True,
+    'orb': True
 }
 
 TB_suffix = "run0"
 loss_type = "MSE"
 phases = ['train', 'val']
-skipFirstXImages = 0  # 60
-skipLastXImages = 0  # 54
+skipFirstXImages = 60  # 60
+skipLastXImages = 100  # 54
 
 # project_basepath = "/workspaces/imitation"
-project_basepath = "/home/kristoffer/dev/orb_imitation"
+project_basepath = "/media/data2/teamICRA/src/develop/orb_imitation"
 # dataset_basepath = "/media/micha/eSSD/datasets"
 # dataset_basepath = "/home/micha/dev/datasets/droneracing"
-dataset_basepath = "/data/datasets/X1Gate8tracks"
+dataset_basepath = "/media/data2/teamICRA/X4Gates_Circles_rl18tracks"
 # dataset_basename = "X4Gates_Circle_right_"
 # dataset_basename = "X4Gates_Circles"
-dataset_basename = "X1Gate8tracks"
+dataset_basename = "X1Gate_dagger_rgbdo"
 # dataset_basename = "X4Gates_Circle_2"
 
 # X1Gate200
@@ -84,5 +84,5 @@ elif itypes == 'd' or itypes == 'do':
 
 # dagger config
 train_dagger = True
-initial_weight_path = "/home/kristoffer/dev/orb_imitation/datagen/eval/runs/X1Gate_evaluation/ResNet8_ds=X1Gate8tracks_l=rgb_f=0.25_bs=32_lt=MSE_lr=0.001_c=run0/epoch5.pth"
+initial_weight_path = "/media/data2/teamICRA/src/develop/orb_imitation/runs_rgbdo/RaceNet8_ds=X1Gate_dagger_rgbdo_l=rgbdo_f=0.25_bs=32_lt=MSE_lr=0.001beta_rate=0.38__c=run0/round6.pth"
 skip_tracks = 10
