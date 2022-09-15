@@ -81,19 +81,24 @@ if __name__ == "__main__":
 
     configurations = []
 
-    with contextlib.closing(DaggerClient(model, configFilePath='datagen/config_cleft.json', createDataset=False)) as dc:
+    # with contextlib.closing(DaggerClient(model, configFilePath='datagen/config_cleft.json', createDataset=False)) as dc:
+    #     # generate random gate configurations within bounds set in config.json
+    #     dc.generateGateConfigurations()
+    #     configurations1 = deepcopy(dc.gateConfigurations)
+
+    # with contextlib.closing(DaggerClient(model, configFilePath='datagen/config_cright.json', createDataset=False)) as dc:
+    #     # generate random gate configurations within bounds set in config.json
+    #     dc.generateGateConfigurations()
+    #     configurations2 = deepcopy(dc.gateConfigurations)
+
+    # configurations = list(configurations1) + list(configurations2)
+
+    # configurations = shuffle(configurations)
+
+    with contextlib.closing(DaggerClient(model, configFilePath='datagen/config_dr.json', createDataset=False)) as dc:
         # generate random gate configurations within bounds set in config.json
         dc.generateGateConfigurations()
-        configurations1 = deepcopy(dc.gateConfigurations)
-
-    with contextlib.closing(DaggerClient(model, configFilePath='datagen/config_cright.json', createDataset=False)) as dc:
-        # generate random gate configurations within bounds set in config.json
-        dc.generateGateConfigurations()
-        configurations2 = deepcopy(dc.gateConfigurations)
-
-    configurations = list(configurations1) + list(configurations2)
-
-    configurations = shuffle(configurations)
+        configurations = deepcopy(dc.gateConfigurations)
 
 
     step_pos = {}
@@ -109,8 +114,11 @@ if __name__ == "__main__":
         # for each configuration
         for i, gateConfig in enumerate(configurations):
 
+            # use i + 1 if model is not pretrained
+            beta = 1 / (i+2)
+
             with contextlib.closing(
-                DaggerClient(model, beta=beta, device=config.device, raceTrackName=f"track{i+config.skip_tracks}", configFilePath='datagen/config.json', createDataset=True)) as dc:
+                DaggerClient(model, beta=beta, device=config.device, raceTrackName=f"track{i+config.skip_tracks}", configFilePath='datagen/config_dr.json', createDataset=True)) as dc:
                 dc.gateConfigurations = [gateConfig]
 
                 # load next gate arrangement 
@@ -119,17 +127,18 @@ if __name__ == "__main__":
                 # fly mission
                 dc.run(showMarkers=False, uav_position=dc.config.uav_position)
 
-            datasets = load_dataset_train_val_split(config.dataset_basepath, config.dataset_basename, config.device, 1000,
-                                config.input_channels, config.skipFirstXImages, config.skipLastXImages, config.batch_size, config.tf, config.jobs)
+                bn = dc.config.dataset_basename
+
+            datasets = load_dataset_train_val_split(config.dataset_basepath, bn , config.device, 1000,
+                            config.input_channels, config.skipFirstXImages, config.skipLastXImages, config.batch_size, config.tf, config.jobs)
 
             batch_count = {}
             for el in config.phases:
                 batch_count[el] = len(datasets[el])
                 print(f"batch count {el}: {batch_count[el]}")
                                 
-            model = train_epoch(i, len(configurations), model, config.phases, config.learning_rate, config.learning_rate_change, config.learning_rate_change_epoch, datasets, dev, lossfunction, writer, step_pos, TB_path, batch_count)
+            model = train_epoch(i + config.epoch_start, len(configurations) + config.epoch_start, model, config.phases, config.learning_rate, config.learning_rate_change, config.learning_rate_change_epoch, datasets, dev, lossfunction, writer, step_pos, TB_path, batch_count)
             
-            beta = 1 / (i+2)
 
     except Exception as e:
         raise e
