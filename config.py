@@ -1,5 +1,3 @@
-
-
 import torchvision.transforms as transforms
 
 device = 'cuda'
@@ -17,7 +15,7 @@ jobs = 1
 input_channels = {
     'rgb': True,
     'depth': False,
-    'orb': False,
+    'orb': False
 }
 
 TB_suffix = "run0"
@@ -30,10 +28,10 @@ skipLastXImages = 0  # 54
 project_basepath = "/home/kristoffer/dev/orb_imitation"
 # dataset_basepath = "/media/micha/eSSD/datasets"
 # dataset_basepath = "/home/micha/dev/datasets/droneracing"
-dataset_basepath = "/home/kristoffer/dev/dataset"
+dataset_basepath = "/data/datasets/X1Gate8tracks"
 # dataset_basename = "X4Gates_Circle_right_"
 # dataset_basename = "X4Gates_Circles"
-dataset_basename = "dagger"
+dataset_basename = "X1Gate8tracks"
 # dataset_basename = "X4Gates_Circle_2"
 
 # X1Gate200
@@ -60,8 +58,6 @@ if num_input_channels < 1:
     print("No input channels selected")
     exit(0)
 
-
-
 # create path for run
 itypes = [
     'rgb' if input_channels['rgb'] else '',
@@ -69,7 +65,6 @@ itypes = [
     'o' if input_channels['orb'] else ''
 ]
 itypes = ''.join(itypes)
-
 
 tf = None
 if itypes == 'rgb' or itypes == 'rgbo':
@@ -90,8 +85,6 @@ elif itypes == 'd' or itypes == 'do':
             dataset_mean[3],
             dataset_std[3])
     ])
-
-
 
 # dagger config
 train_dagger = True

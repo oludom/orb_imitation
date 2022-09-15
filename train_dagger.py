@@ -1,56 +1,18 @@
-
-
 import sys
 
 from sklearn.utils import shuffle
+
 sys.path.insert(0, './datagen')
 
-
-from  SimClient import SimClient
 from DaggerClient import DaggerClient
-from train import *    # also imports config
+from train import *  # also imports config
 
-import numpy as np
-
-
-
-
-# with contextlib.closing(SimClient(configFilePath='datagen/config.json')) as dc:
-#     # dc.printGatePositions(8)
-#     gatePositions = dc.config.gates['poses']
-#     dc.gateConfigurations = [gatePositions]
-#     dc.gateMission(True, False)
-
-
-
-from operator import mod
-from pyexpat import model
-from re import I
-from signal import pause
-from statistics import mode
-from tokenize import Triple
-from turtle import shape
-from SimClient import SimClient
-from NetworkTestClient import NetworkTestClient
-import time
-import numpy as np
-from UnityPID import VelocityPID
 from copy import deepcopy
-import airsim
 import torch
-import argparse
-from AirSimInterface import AirSimInterface
-from util import *
-from math import *
-import os
+
 from ResNet8 import ResNet8
-import torchvision.transforms as transforms
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
-import curses
-
-# from train_newloader import train_main
-
 
 if __name__ == "__main__":
 
@@ -58,17 +20,15 @@ if __name__ == "__main__":
 
     beta = 1
 
-# tb path handling
-    TB_path, writer = get_path_for_run(config.project_basepath, config.dataset_basename, config.itypes, config.resnet_factor, config.batch_size, config.loss_type, config.learning_rate, config.TB_suffix)
-
-    # path, writer = get_path_for_run(config.project_basepath, config.dataset_basename, config.itypes, config.resnet_factor, config.batch_size, config.loss_type, config.learning_rate, config.TB_suffix)
-    # model_path = str(TB_path) + f"epoch{i-1}.pth"
+    # tb path handling
+    TB_path, writer = get_path_for_run(config.project_basepath, config.dataset_basename, config.itypes,
+                                       config.resnet_factor, config.batch_size, config.loss_type, config.learning_rate,
+                                       config.TB_suffix)
 
     dev = torch.device(config.device)
 
     model = ResNet8(input_dim=config.num_input_channels, output_dim=4, f=config.resnet_factor)
     model = model.to(dev)
-
 
     if config.parallel and config.device == 'cuda':
         model = torch.nn.DataParallel(model)
@@ -100,7 +60,6 @@ if __name__ == "__main__":
         dc.generateGateConfigurations()
         configurations = deepcopy(dc.gateConfigurations)
 
-
     step_pos = {}
     for el in config.phases:
         step_pos[el] = 0
@@ -109,8 +68,6 @@ if __name__ == "__main__":
     best_loss = 0.0
 
     try:
-        # for epoch in range(config.epochs):
-            # train epoch
         # for each configuration
         for i, gateConfig in enumerate(configurations):
 
@@ -146,4 +103,3 @@ if __name__ == "__main__":
         # save model
         writer.flush()
         writer.close()
-

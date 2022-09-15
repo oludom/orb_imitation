@@ -134,7 +134,7 @@ def print_mean_std(datasets):
     # print mean and std of dataset
     mean, std = calculate_mean_std(datasets['train'])
     print("mean:", mean, "std:", std)
-    # exit(0)
+    exit(0)
 
 def get_path_for_run(project_basepath, dataset_basename, itypes, resnet_factor, batch_size, loss_type, learning_rate, TB_suffix):
     TB_path = Path(project_basepath,
@@ -247,6 +247,8 @@ def train(project_basepath,
 
     datasets = load_dataset(dataset_basepath, dataset_basename, device, num_train_tracks, num_val_tracks,
                             input_channels, skipFirstXImages, skipLastXImages, batch_size, tf, jobs)
+
+    # print_mean_std(datasets)
 
     dev = torch.device(device)
 
