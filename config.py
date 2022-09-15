@@ -7,31 +7,31 @@ learning_rate = 0.001
 learning_rate_change = 0.1
 learning_rate_change_epoch = 5
 batch_size = 32
-resnet_factor = 0.25
-num_train_tracks = 140
-num_val_tracks = 20
+resnet_factor = 0.5
+num_train_tracks = 170
+num_val_tracks = 50
 jobs = 8
 
 input_channels = {
-    'rgb': True,
-    'depth': False,
+    'rgb': False,
+    'depth': True,
     'orb': False
 }
 
 TB_suffix = "run0"
 loss_type = "MSE"
 phases = ['train', 'val']
-skipFirstXImages = 0  # 60
-skipLastXImages = 0  # 54
+skipFirstXImages = 80  # 60
+skipLastXImages = 10  # 54
 
 # project_basepath = "/workspaces/imitation"
-project_basepath = "/home/kristoffer/dev/orb_imitation"
+project_basepath = "/home/micha/dev/ml/orb_imitation"
 # dataset_basepath = "/media/micha/eSSD/datasets"
 # dataset_basepath = "/home/micha/dev/datasets/droneracing"
-dataset_basepath = "/data/datasets/X1Gate8tracks"
+dataset_basepath = "/data/datasets/dr_pretrain"
 # dataset_basename = "X4Gates_Circle_right_"
 # dataset_basename = "X4Gates_Circles"
-dataset_basename = "X1Gate8tracks"
+dataset_basename = "dr_pretrain"
 # dataset_basename = "X4Gates_Circle_2"
 
 # X1Gate200
@@ -43,8 +43,12 @@ dataset_basename = "X1Gate8tracks"
 # dataset_std = (2.5673e-01, 2.9010e-01, 3.2995e-01, 7.7903e+02)
 
 # X1Gate8tracks
-dataset_mean = (0.4660, 0.4733, 0.4792, 78.8772)
-dataset_std = (2.5115e-01, 2.8758e-01, 3.2971e-01, 8.9808e+02)
+# dataset_mean = (0.4660, 0.4733, 0.4792, 78.8772)
+# dataset_std = (2.5115e-01, 2.8758e-01, 3.2971e-01, 8.9808e+02)
+
+# domain randomization pretrain
+dataset_mean = (0.4973,  0.4651,  0.4801, 32.6839)
+dataset_std = (0.1714,  0.1960,  0.2171, 22.7819)
 
 num_input_channels = (input_channels['rgb'] * 3) + \
                      (input_channels['depth'] * 1) + \
@@ -82,7 +86,8 @@ elif itypes == 'd' or itypes == 'do':
             dataset_std[3])
     ])
 
+
 # dagger config
-train_dagger = True
+train_dagger = False
 initial_weight_path = "/home/kristoffer/dev/orb_imitation/datagen/eval/runs/X1Gate_evaluation/ResNet8_ds=X1Gate8tracks_l=rgb_f=0.25_bs=32_lt=MSE_lr=0.001_c=run0/epoch5.pth"
 skip_tracks = 10

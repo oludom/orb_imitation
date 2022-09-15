@@ -12,11 +12,9 @@ import torch.nn as nn
 import torch.optim as optim
 
 from torch.utils.tensorboard import SummaryWriter
-# from torchsummary import summary
-import torchvision.transforms as transforms
+from torchsummary import summary
 
 from ResNet8 import ResNet8
-import torchvision.models.densenet
 
 from calculate_mean_std import calculate_mean_std
 import config
@@ -30,30 +28,28 @@ torch.set_grad_enabled(True)
 # torch.multiprocessing.set_start_method('spawn')
 
 def load_dataset_train_val_split(dataset_basepath, dataset_basename, device, maxTracks, input_channels,
-                 skipFirstXImages, skipLastXImages, batch_size, tf, jobs=1):
-
+                                 skipFirstXImages, skipLastXImages, batch_size, tf, jobs=1):
     dataset = RaceTracksDataset(
-                    dataset_basepath,
-                    dataset_basename,
-                    device=device,
-                    maxTracksLoaded=maxTracks,
-                    imageScale=100,
-                    skipTracks=0,
-                    grayScale=False,
-                    imageTransforms=tf,
-                    skipLastXImages=skipLastXImages,
-                    skipFirstXImages=skipFirstXImages,
-                    loadRGB=input_channels['rgb'],
-                    loadDepth=input_channels['depth'],
-                    loadOrb=input_channels['orb']
-                )
+        dataset_basepath,
+        dataset_basename,
+        device=device,
+        maxTracksLoaded=maxTracks,
+        imageScale=100,
+        skipTracks=0,
+        grayScale=False,
+        imageTransforms=tf,
+        skipLastXImages=skipLastXImages,
+        skipFirstXImages=skipFirstXImages,
+        loadRGB=input_channels['rgb'],
+        loadDepth=input_channels['depth'],
+        loadOrb=input_channels['orb']
+    )
     phases = ['train', 'val']
     # print(len(dataset))
     split_ratio = 0.8
     train_size = int(split_ratio * len(dataset))
     val_size = len(dataset) - train_size
     train_set, val_set = torch.utils.data.random_split(dataset, [train_size, val_size])
-
 
     datasets = {
         'train':
@@ -72,6 +68,7 @@ def load_dataset_train_val_split(dataset_basepath, dataset_basename, device, max
             )
     }
     return datasets
+
 
 def load_dataset(dataset_basepath, dataset_basename, device, num_train_tracks, num_val_tracks, input_channels,
                  skipFirstXImages, skipLastXImages, batch_size, tf, jobs=1):
@@ -136,10 +133,12 @@ def print_mean_std(datasets):
     print("mean:", mean, "std:", std)
     exit(0)
 
-def get_path_for_run(project_basepath, dataset_basename, itypes, resnet_factor, batch_size, loss_type, learning_rate, TB_suffix):
+
+def get_path_for_run(project_basepath, dataset_basename, itypes, resnet_factor, batch_size, loss_type, learning_rate,
+                     TB_suffix):
     TB_path = Path(project_basepath,
-                f"runs/ResNet8_ds={dataset_basename}_l={itypes}_f={resnet_factor}"
-                f"_bs={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
+                   f"runs/ResNet8_ds={dataset_basename}_l={itypes}_f={resnet_factor}"
+                   f"_bs={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
     if TB_path.exists():
         print("TB_path exists")
         exit(0)
@@ -147,8 +146,8 @@ def get_path_for_run(project_basepath, dataset_basename, itypes, resnet_factor, 
     return TB_path, writer
 
 
-def train_epoch(epoch, epochs, model, phases, learning_rate, learning_rate_change, learning_rate_change_epoch, datasets, dev, lossfunction, writer, step_pos, TB_path, batch_count):
-
+def train_epoch(epoch, epochs, model, phases, learning_rate, learning_rate_change, learning_rate_change_epoch, datasets,
+                dev, lossfunction, writer, step_pos, TB_path, batch_count):
     total_loss = {}
     for el in phases:
         total_loss[el] = 0
@@ -157,9 +156,9 @@ def train_epoch(epoch, epochs, model, phases, learning_rate, learning_rate_chang
     print('-' * 10)
 
     optimizer = optim.Adam(model.parameters(),
-                            lr=schedule(epoch, learning_rate, learning_rate_change, learning_rate_change_epoch),
-                            weight_decay=2e-4
-                            )
+                           lr=schedule(epoch, learning_rate, learning_rate_change, learning_rate_change_epoch),
+                           weight_decay=2e-4
+                           )
 
     for phase in phases:
         if phase == 'train':
@@ -214,7 +213,6 @@ def train_epoch(epoch, epochs, model, phases, learning_rate, learning_rate_chang
     return model
 
 
-
 def train(project_basepath,
           dataset_basepath,
           dataset_basename,
@@ -241,9 +239,9 @@ def train(project_basepath,
           *args,
           **kwargs
           ):
-
     # tb path handling
-    TB_path, writer = get_path_for_run(project_basepath, dataset_basename, itypes, resnet_factor, batch_size, loss_type, learning_rate, TB_suffix)
+    TB_path, writer = get_path_for_run(project_basepath, dataset_basename, itypes, resnet_factor, batch_size, loss_type,
+                                       learning_rate, TB_suffix)
 
     datasets = load_dataset(dataset_basepath, dataset_basename, device, num_train_tracks, num_val_tracks,
                             input_channels, skipFirstXImages, skipLastXImages, batch_size, tf, jobs)
@@ -267,7 +265,7 @@ def train(project_basepath,
         batch_count[el] = len(datasets[el])
         step_pos[el] = 0
         print(f"batch count {el}: {batch_count[el]}")
-    # summary(model, (num_input_channels, 144, 256), device=device)
+    summary(model, (num_input_channels, 144, 256), device=device)
 
     best_model = copy.deepcopy(model.state_dict())
     best_loss = 0.0
@@ -275,8 +273,10 @@ def train(project_basepath,
     try:
         for epoch in range(epochs):
             # train epoch
-            current_loss, model = train_epoch(epoch, epochs, model, phases, learning_rate, learning_rate_change, learning_rate_change_epoch, datasets, dev, lossfunction, writer, step_pos, TB_path, batch_count)
-                
+            model = train_epoch(epoch, epochs, model, phases, learning_rate, learning_rate_change,
+                                learning_rate_change_epoch, datasets, dev, lossfunction, writer, step_pos, TB_path,
+                                batch_count)
+
 
     except Exception as e:
         raise e
