@@ -169,8 +169,8 @@ include_directories(
 catkin_install_python(PROGRAMS
   scripts/orb_extractor.py
   scripts/pid_test.py
-  scripts/external/UnityPID.py
-  scripts/external/util.py
+  scripts/UnityPID.py
+  scripts/util.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

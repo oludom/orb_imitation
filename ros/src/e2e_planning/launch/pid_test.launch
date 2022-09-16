@@ -1,4 +1,4 @@
 
 <launch>
-    <node name="pid_test" pkg="e2e_planning" type="pid_test" output="screen"></node>
+    <node name="pid_test" pkg="e2e_planning" type="pid_test.py" output="screen"></node>
 </launch>
