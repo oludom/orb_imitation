@@ -1,0 +1,33 @@
+
+
+<launch>
+
+    <arg name="camera_name"          default="zedm" />
+
+<!--    <include file="$(find mavros)/launch/apm.launch">-->
+<!--        <arg name="fcu_url" value="/dev/ttyUSB0:921600" />-->
+<!--    </include>-->
+
+<!--     <group ns="$(arg camera_name)"> -->
+<!--         <include file="$(find zed_wrapper)/launch/include/zed_camera.launch.xml"> -->
+<!--             <arg name="camera_name"         value="$(arg camera_name)" /> -->
+<!--             <arg name="svo_file"            value="" /> -->
+<!--             <arg name="stream"              value="" /> -->
+<!--             <arg name="node_name"           value="zed_node" /> -->
+<!--             <arg name="camera_model"        value="zedm" /> -->
+<!--             <arg name="base_frame"          value="base_link" /> -->
+<!--             <arg name="publish_urdf"        value="true" /> -->
+<!--             <arg name="cam_pos_x"           value="0.0" /> -->
+<!--             <arg name="cam_pos_y"           value="0.0" /> -->
+<!--             <arg name="cam_pos_z"           value="0.0" /> -->
+<!--             <arg name="cam_roll"            value="0.0" /> -->
+<!--             <arg name="cam_pitch"           value="0.0" /> -->
+<!--             <arg name="cam_yaw"             value="0.0" /> -->
+<!--         </include> -->
+<!--     </group> -->
+
+<!--     <node pkg="orb" name="orb_extractor" type="extractor.py" output="screen"> -->
+
+<!--    </node>-->
+</launch>
+
