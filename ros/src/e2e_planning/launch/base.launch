@@ -10,7 +10,7 @@
 
     <node name="vicon_feeder" pkg="vicon_feeder" type="vicon_feed" output="screen">
 
-        <remap from="/vicon_pose" to="/vicon/kakao/kakao"/>
+        <remap from="/drone_vicon_pose" to="/vicon/mikeNX/mikeNX"/>
         <param name="publish_groundtruth_pose_to_drone" value="true" />
 
     </node>

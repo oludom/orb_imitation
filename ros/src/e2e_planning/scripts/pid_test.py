@@ -11,8 +11,8 @@ import numpy as np
 # nice terminal output
 # import curses
 
-import external.UnityPID as PID
-import external.util as util
+import UnityPID as PID
+import util as util
 
 from geometry_msgs.msg import PoseStamped, TwistStamped
 

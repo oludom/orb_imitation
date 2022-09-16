@@ -4,7 +4,8 @@ project(e2e_planning)
 ## Compile as C++11, supported in ROS Kinetic and newer
  add_compile_options(-std=c++11)
 
-set(OpenCV_DIR /home/micha/opencv3/installed/share/OpenCV)
+# set(OpenCV_DIR /home/micha/opencv3/installed/share/OpenCV)
+set(OpenCV_DIR /usr/lib/aarch64-linux-gnu/cmake/opencv4/)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -167,6 +168,9 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
   scripts/orb_extractor.py
+  scripts/pid_test.py
+  scripts/external/UnityPID.py
+  scripts/external/util.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
