@@ -49,7 +49,7 @@ jobs = 8
 
 
 input_channels = {
-    'rgb': True,
+    'rgb': False,
     'depth': True,
     'orb': True
 }
@@ -105,18 +105,21 @@ itypes = ''.join(itypes)
 tf = None
 if itypes == 'rgb' or itypes == 'rgbo':
     tf = transforms.Compose([
+        transforms.Resize((144, 256)),
         transforms.Normalize(
             dataset_mean[:3],
             dataset_std[:3])
     ])
 elif itypes == 'rgbd' or itypes == 'rgbdo':
     tf = transforms.Compose([
+        transforms.Resize((144, 256)),
         transforms.Normalize(
             dataset_mean,
             dataset_std)
     ])
 elif itypes == 'd' or itypes == 'do':
     tf = transforms.Compose([
+        transforms.Resize((144, 256)),
         transforms.Normalize(
             dataset_mean[3],
             dataset_std[3])
@@ -329,6 +332,8 @@ class NetworkTestClient():
         self.model.to(self.dev)
         self.model.eval()
 
+        print("model loaded.")
+
     # def run(self, uav_position=None):
     #
     #     self.client.simPause(False)
@@ -456,6 +461,7 @@ class NetworkTestClient():
 
     def preprocessImages(self, image, depth):
 
+        sample = None
         withDepth = input_channels['depth']
 
         if input_channels['orb']:
@@ -488,7 +494,7 @@ class NetworkTestClient():
             # pd(start, f"tf7")
 
         if input_channels['orb']:
-            orbmask = torch.zeros_like(image[0])
+            orbmask = torch.zeros_like(sample[0])
             for el in kp:
                 x, y = el.pt
                 orbmask[int(y), int(x)] = 1
@@ -512,19 +518,24 @@ class NetworkTestClient():
         try:
             # convert image
             lcvImage = self.bridge.imgmsg_to_cv2(limsg, "bgr8")
-            depthImage= self.bridge.imgmsg_to_cv2(depthmsg, desired_encoding='passthrough')
-            depthImage = np.array(depthImage, dtype=np.float32)
-            depthImage = np.nan_to_num(depthImage)
-            # print(depthImage)
+            if input_channels['depth']:
+                depthImage= self.bridge.imgmsg_to_cv2(depthmsg, desired_encoding='passthrough')
+                depthImage = np.array(depthImage, dtype=np.float32)
+                depthImage = np.nan_to_num(depthImage)
+            else:
+                depthImage = None
+# print(depthImage)
             # depthImage = cv.applyColorMap(cv.convertScaleAbs(depthImage, alpha=0.03), cv.COLORMAP_JET)
 
             sample = self.preprocessImages(lcvImage, depthImage)
+
+#            print(sample.shape)
 
             sample = torch.unsqueeze(sample, dim=0)
             sample = sample.to(torch.device("cuda"))
 
             # predict vector with network
-            s = now()
+#            s = now()
             pred = self.model(sample)
             # pd(s, "inference")
             pred = pred.to(torch.device('cpu'))
@@ -563,7 +574,7 @@ if __name__ == '__main__':
 
     rospy.init_node('listener', anonymous=True)
 
-    orb = NetworkTestClient(f"/home/micha/dev/ml/orb_imitation/models/ResNet8_ds=dr_pretrain_l={itypes}_f=0.5_bs=32_lt=MSE_lr=0.001_c=run0/best.pth",
+    orb = NetworkTestClient(f"/home/mike/dev/orb_imitation/models/ResNet8_ds=dr_pretrain_l={itypes}_f=0.5_bs=32_lt=MSE_lr=0.001_c=run0/best.pth",
                 device="cuda", raceTrackName="", configFilePath='config_dr_test.json')
 
     try:
