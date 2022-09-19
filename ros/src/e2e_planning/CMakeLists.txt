@@ -4,8 +4,8 @@ project(e2e_planning)
 ## Compile as C++11, supported in ROS Kinetic and newer
  add_compile_options(-std=c++11)
 
-# set(OpenCV_DIR /home/micha/opencv3/installed/share/OpenCV)
-set(OpenCV_DIR /usr/lib/aarch64-linux-gnu/cmake/opencv4/)
+set(OpenCV_DIR /home/micha/opencv3/installed/share/OpenCV)
+# set(OpenCV_DIR /usr/lib/aarch64-linux-gnu/cmake/opencv4/)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -27,7 +27,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
+catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -171,6 +171,7 @@ catkin_install_python(PROGRAMS
   scripts/pid_test.py
   scripts/UnityPID.py
   scripts/util.py
+  scripts/inference_node.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
