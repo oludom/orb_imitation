@@ -105,21 +105,21 @@ itypes = ''.join(itypes)
 tf = None
 if itypes == 'rgb' or itypes == 'rgbo':
     tf = transforms.Compose([
-        transforms.Resize((144, 256)),
+        # transforms.Resize((144, 256)),
         transforms.Normalize(
             dataset_mean[:3],
             dataset_std[:3])
     ])
 elif itypes == 'rgbd' or itypes == 'rgbdo':
     tf = transforms.Compose([
-        transforms.Resize((144, 256)),
+        # transforms.Resize((144, 256)),
         transforms.Normalize(
             dataset_mean,
             dataset_std)
     ])
 elif itypes == 'd' or itypes == 'do':
     tf = transforms.Compose([
-        transforms.Resize((144, 256)),
+        # transforms.Resize((144, 256)),
         transforms.Normalize(
             dataset_mean[3],
             dataset_std[3])
@@ -245,6 +245,35 @@ class ResNet8(nn.Module):
         return to
 
 
+def image_resize(image, width=None, height=None, inter=cv.INTER_AREA):
+    # initialize the dimensions of the image to be resized and
+    # grab the image size
+    (h, w) = image.shape[:2]
+
+    # if both the width and height are None, then return the
+    # original image
+    if width is None and height is None:
+        return image
+
+    # check to see if the width is None
+    if width is None:
+        # calculate the ratio of the height and construct the
+        # dimensions
+        r = height / float(h)
+        dim = (int(w * r), height)
+
+    # otherwise, the height is None
+    else:
+        # calculate the ratio of the width and construct the
+        # dimensions
+        r = width / float(w)
+        dim = (width, int(h * r))
+
+    # resize the image
+    resized = cv.resize(image, dim, interpolation=inter)
+
+    # return the resized image
+    return resized
 
 def get_orb(img_left, img_right=None, n_features=1000, max_matches=100, orb=None):
     if len(img_left.shape) > 2:
@@ -517,9 +546,15 @@ class NetworkTestClient():
 
         try:
             # convert image
-            lcvImage = self.bridge.imgmsg_to_cv2(limsg, "bgr8")
+            if input_channels['rgb'] or input_channels['orb']:
+                lcvImage = self.bridge.imgmsg_to_cv2(limsg, "bgr8")
+                lcvImage = image_resize(lcvImage, width=256, height=144)
+            else:
+                lcvImage = None
+
             if input_channels['depth']:
-                depthImage= self.bridge.imgmsg_to_cv2(depthmsg, desired_encoding='passthrough')
+                depthImage = self.bridge.imgmsg_to_cv2(depthmsg, desired_encoding='passthrough')
+                depthImage = image_resize(depthImage, width=256, height=144)
                 depthImage = np.array(depthImage, dtype=np.float32)
                 depthImage = np.nan_to_num(depthImage)
             else:
