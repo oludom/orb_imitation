@@ -1,0 +1,19 @@
+
+
+<launch>
+
+    <include file="$(find mavros)/launch/apm.launch">
+        <arg name="fcu_url" value="/dev/ttyUSB0:921600" />
+    </include>
+
+    <include file="$(find vicon_bridge)/launch/vicon.launch" />
+
+    <node name="vicon_feeder" pkg="vicon_feeder" type="vicon_feed" output="screen">
+
+        <remap from="/drone_vicon_pose" to="/vicon/mikeNX/mikeNX"/>
+        <param name="publish_groundtruth_pose_to_drone" value="true" />
+
+    </node>
+
+</launch>
+

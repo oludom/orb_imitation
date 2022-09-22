@@ -1,4 +1,3 @@
-
 import torch
 import torch.nn as nn
 import torchvision
@@ -11,6 +10,8 @@ taken from https://github.com/pytorch/pytorch/issues/67551#issuecomment-95497235
 pytorch does not support padding='same' if Conv2d has stride other than 1
 therefore use helperfunction to calculate padding
 '''
+
+
 class Conv2dSame(torch.nn.Conv2d):
 
     def calc_same_pad(self, i: int, k: int, s: int, d: int) -> int:
@@ -45,50 +46,48 @@ class ResNet8(nn.Module):
 
         # first residual block
         self.x1 = nn.Sequential(
-            Conv2dSame(in_channels=input_dim, out_channels=int(32*f), kernel_size=(5, 5), stride=(2, 2)),
+            Conv2dSame(in_channels=input_dim, out_channels=int(32 * f), kernel_size=(5, 5), stride=(2, 2)),
             nn.MaxPool2d((3, 3), stride=(2, 2))
         )
         self.x2 = nn.Sequential(
             nn.ReLU(),
-            Conv2dSame(in_channels=int(32*f), out_channels=int(32*f), kernel_size=(3, 3), stride=(2, 2)),
+            Conv2dSame(in_channels=int(32 * f), out_channels=int(32 * f), kernel_size=(3, 3), stride=(2, 2)),
             nn.ReLU(),
-            Conv2dSame(in_channels=int(32*f), out_channels=int(32*f), kernel_size=(3, 3), stride=(1, 1))
+            Conv2dSame(in_channels=int(32 * f), out_channels=int(32 * f), kernel_size=(3, 3), stride=(1, 1))
         )
-        self.x1_ = Conv2dSame(in_channels=int(32*f), out_channels=int(32*f), kernel_size=(1, 1), stride=(2, 2))
+        self.x1_ = Conv2dSame(in_channels=int(32 * f), out_channels=int(32 * f), kernel_size=(1, 1), stride=(2, 2))
 
         # second residual block
         self.x4 = nn.Sequential(
             nn.ReLU(),
-            Conv2dSame(in_channels=int(32*f), out_channels=int(64*f), kernel_size=(3, 3), stride=(2, 2)),
+            Conv2dSame(in_channels=int(32 * f), out_channels=int(64 * f), kernel_size=(3, 3), stride=(2, 2)),
             nn.ReLU(),
-            Conv2dSame(in_channels=int(64*f), out_channels=int(64*f), kernel_size=(3, 3), stride=(1, 1))
+            Conv2dSame(in_channels=int(64 * f), out_channels=int(64 * f), kernel_size=(3, 3), stride=(1, 1))
         )
 
-        self.x3 = Conv2dSame(in_channels=int(32*f), out_channels=int(64*f), kernel_size=(1, 1), stride=(2, 2))
-
+        self.x3 = Conv2dSame(in_channels=int(32 * f), out_channels=int(64 * f), kernel_size=(1, 1), stride=(2, 2))
 
         # third residual block
 
         self.x6 = nn.Sequential(
             nn.ReLU(),
-            Conv2dSame(in_channels=int(64*f), out_channels=int(128*f), kernel_size=(3, 3), stride=(2, 2)),
+            Conv2dSame(in_channels=int(64 * f), out_channels=int(128 * f), kernel_size=(3, 3), stride=(2, 2)),
             nn.ReLU(),
-            Conv2dSame(in_channels=int(128*f), out_channels=int(128*f), kernel_size=(3, 3), stride=(1, 1))
+            Conv2dSame(in_channels=int(128 * f), out_channels=int(128 * f), kernel_size=(3, 3), stride=(1, 1))
         )
 
-        self.x5 = Conv2dSame(in_channels=int(64*f), out_channels=int(128*f), kernel_size=(1, 1), stride=(2, 2))
+        self.x5 = Conv2dSame(in_channels=int(64 * f), out_channels=int(128 * f), kernel_size=(1, 1), stride=(2, 2))
 
         self.x7 = nn.Sequential(
             nn.Flatten(),
             nn.ReLU(),
             nn.Dropout(0.5),
         )
-        self.dense = nn.Linear(in_features=int(2240*4*f), out_features=256)
+        self.dense = nn.Linear(in_features=int(1280 * 4 * f), out_features=256)
         self.out = nn.Sequential(
             nn.ReLU(),
             nn.Linear(in_features=256, out_features=output_dim)
         )
-
 
     def forward(self, t):
         # first residual block
@@ -112,4 +111,3 @@ class ResNet8(nn.Module):
         to = self.out(td)
 
         return to
-
