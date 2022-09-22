@@ -42,14 +42,14 @@ learning_rate = 0.001
 learning_rate_change = 0.1
 learning_rate_change_epoch = 5
 batch_size = 32
-resnet_factor = 0.5
+resnet_factor = 0.25
 num_train_tracks = 170
 num_val_tracks = 50
 jobs = 8
 
 
 input_channels = {
-    'rgb': False,
+    'rgb': True,
     'depth': True,
     'orb': True
 }
@@ -306,6 +306,7 @@ pd = lambda s, t: print(f"{t}: {now() - s}ms")
 class NetworkTestClient():
 
     def __init__(self, modelPath, raceTrackName="track0", device='cuda', *args, **kwargs):
+        self.loaded = False
 
         # init super class (AirSimController)
         # super().__init__(raceTrackName=raceTrackName, createDataset=False, *args, **kwargs)
@@ -362,7 +363,7 @@ class NetworkTestClient():
         self.model.eval()
 
         print("model loaded.")
-
+        self.loaded = True
     # def run(self, uav_position=None):
     #
     #     self.client.simPause(False)
@@ -539,7 +540,8 @@ class NetworkTestClient():
 
 
     def callback(self, limsg, depthmsg) -> None:
-
+        if not self.loaded:
+            return
         if self.firstCall:
             rospy.loginfo("Camera connected, receiving images.")
             self.firstCall = False
@@ -609,7 +611,7 @@ if __name__ == '__main__':
 
     rospy.init_node('listener', anonymous=True)
 
-    orb = NetworkTestClient(f"/home/mike/dev/orb_imitation/models/ResNet8_ds=dr_pretrain_l={itypes}_f=0.5_bs=32_lt=MSE_lr=0.001_c=run0/best.pth",
+    orb = NetworkTestClient(f"/home/mike/dev/orb_imitation/models/overfit/ResNet8_ds=X1Gate8tracks_l={itypes}_f=0.25_bs=32_lt=MSE_lr=0.001_c=run0/best.pth",
                 device="cuda", raceTrackName="", configFilePath='config_dr_test.json')
 
     try:
