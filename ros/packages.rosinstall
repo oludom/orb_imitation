@@ -1,0 +1,15 @@
+
+
+- git:
+    local-name: vicon_bridge
+    uri: git@github.com:open-airlab/vicon_bridge.git
+    version: master
+- git:
+    local-name: vicon_feeder
+    uri: git@github.com:open-airlab/vicon_feeder.git
+    version: main
+- git:
+    local-name: zed-ros-wrapper
+    uri: git@github.com:stereolabs/zed-ros-wrapper.git
+    version: master
+
