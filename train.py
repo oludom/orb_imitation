@@ -25,8 +25,6 @@ torch.set_printoptions(linewidth=120)
 torch.set_grad_enabled(True)
 
 
-# torch.multiprocessing.set_start_method('spawn')
-
 def load_dataset_train_val_split(dataset_basepath, dataset_basename, device, maxTracks, input_channels,
                                  skipFirstXImages, skipLastXImages, batch_size, tf, jobs=1):
     dataset = RaceTracksDataset(
@@ -44,8 +42,7 @@ def load_dataset_train_val_split(dataset_basepath, dataset_basename, device, max
         loadDepth=input_channels['depth'],
         loadOrb=input_channels['orb']
     )
-    phases = ['train', 'val']
-    # print(len(dataset))
+
     split_ratio = 0.8
     train_size = int(split_ratio * len(dataset))
     val_size = len(dataset) - train_size
@@ -193,20 +190,15 @@ def train_epoch(epoch, epochs, model, phases, learning_rate, learning_rate_chang
                     # update weights
                     optimizer.step()
 
-            # print("batch", image_count, "loss", loss.item())
             total_loss[phase] += loss.item()
 
-            # print("batch:", i, "loss:", loss.item())
             writer.add_scalar(f"Loss/{phase}", loss.item(), global_step=(step_pos[phase]))
             step_pos[phase] += 1
 
-        # step_lr_scheduler.step()
         avg_total_loss = total_loss[phase] / batch_count[phase]
         print("epoch:", epoch, phase, "loss:", avg_total_loss)
         writer.add_scalar("Loss/epoch/" + phase, avg_total_loss, global_step=epoch)
 
-        # if phase == 'val' and avg_total_loss < best_loss:
-        #     best_loss = avg_total_loss
         current_model = copy.deepcopy(model.state_dict())
         torch.save(current_model, str(TB_path) + f"/epoch{epoch}.pth")
 
@@ -267,9 +259,6 @@ def train(project_basepath,
         print(f"batch count {el}: {batch_count[el]}")
     summary(model, (num_input_channels, 144, 256), device=device)
 
-    best_model = copy.deepcopy(model.state_dict())
-    best_loss = 0.0
-
     try:
         for epoch in range(epochs):
             # train epoch
@@ -284,8 +273,6 @@ def train(project_basepath,
         # save model
         writer.flush()
         writer.close()
-
-        # torch.save(best_model, str(TB_path) + "/best.pth")
 
 
 if __name__ == "__main__":

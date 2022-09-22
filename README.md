@@ -1,2 +1,7 @@
 # orb_imitation
-Drone racing with imitation learning, exporing ORB features as part of data pre-processing for a DNN model.
+
+## Abstract
+
+Drone racing has recently gained popularity as a sport, where pilots demonstrate the powerful abilities of human senses and perception with fast decision-making. They compete in drone racing leagues around the world, flying through complex 3D racing courses at high speeds, often in disadvantageous lighting conditions. Flying drones is one of the most impressive as well as challenging ways of comparing robot abilities to human abilities. Especially drone racing poses a key challenge to autonomous agile flight and navigation in complex environments. This thesis aims to tackle this challenge. An end-to-end trajectory planning method with DNN models for drone racing is developed and trained with imitation learning. RGB images as input are augmented with depth image input and ORB feature positions and different combinations of these inputs are explored in simulation. To acquire sufficient training data, a data collection pipeline is developed using Unreal Engine 4 and AirSim. The results show that adding extra input channels to the baseline method \cite{loquercio_deep_2020 is beneficial in more complex scenarios, whereas ORB feature positions alone are not sufficient for drone racing. Additionally, the proposed method is able to cope with multiple gates in view simultaneously. 
+
+Master Thesis Submission September 2022 at Department of Electrical & Computer Engineering, Aarhus University, Denmark

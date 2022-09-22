@@ -14,9 +14,9 @@ jobs = 8
 
 
 input_channels = {
-    'rgb': False,
+    'rgb': True,
     'depth': True,
-    'orb': False
+    'orb': True
 }
 
 TB_suffix = "run0"
@@ -87,11 +87,4 @@ elif itypes == 'd' or itypes == 'do':
             dataset_std[3])
     ])
 
-
-# dagger config
-
-train_dagger = False
-initial_weight_path = "/home/kristoffer/dev/orb_imitation/datagen/eval/runs/X1Gate_evaluation/ResNet8_ds=X1Gate8tracks_l=rgb_f=0.25_bs=32_lt=MSE_lr=0.001_c=run0/epoch5.pth"
-skip_tracks = 10
-epoch_start = 10
 
