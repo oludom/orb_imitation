@@ -1,22 +1,7 @@
 #!/usr/bin/env python
 import rospy
-# from sensor_msgs.msg import Image
-# import message_filters as mf
 
 import numpy as np
-# import cv2 as cv
-# from cv_bridge import CvBridge, CvBridgeError
-# import time
-
-# nice terminal output
-# import curses
-
-
-#!/usr/bin/env python
-
-import time
-import numpy as np
-from math import *
 
 '''
 PID controller based on 
@@ -189,8 +174,6 @@ class VelocityPID:
         self.errorOutput3 = f"z: {self.cz.errorOutput}"
 
 
-
-
 import math
 
 import numpy as np
@@ -304,10 +287,6 @@ def to_quaternion(pitch, roll, yaw):
     return w, x, y, z
 
 
-
-
-
-
 from geometry_msgs.msg import PoseStamped, TwistStamped
 
 
@@ -336,24 +315,8 @@ class VelocityControllerNode:
 
         # subscribe to pose
         self.pose_sub = rospy.Subscriber("/mavros/vision_pose/pose", PoseStamped, self.callback)
-
         self.vel_pub = rospy.Publisher("/mavros/setpoint_velocity/cmd_vel", TwistStamped, queue_size=10)
-
         self.timer = rospy.Timer(rospy.Duration(0.01), self.updatePID)
-
-        # self.c = curses.initscr()
-
-        # self.bridge = CvBridge()
-        # lisub = mf.Subscriber('/zedm/zed_node/left/image_rect_color', Image)
-        # risub = mf.Subscriber("/zedm/zed_node/right/image_rect_color", Image)
-        #
-        # self.ts = mf.TimeSynchronizer([lisub, risub], 10)
-        # self.ts.registerCallback(self.callback)
-        #
-        # self.debugPublisher = rospy.Publisher("/debugImage", Image, queue_size=10)
-        #
-        # self.orb = cv.ORB_create(nfeatures=1500)
-        # self.matcher = cv.BFMatcher(cv.NORM_HAMMING, crossCheck=True)
 
     def callback(self, pose: PoseStamped) -> None:
 
@@ -368,7 +331,7 @@ class VelocityControllerNode:
         if self.pose is not None:
             # update pid controller
             _, _, WposeYaw = to_eularian_angles(self.pose.pose.orientation.w, self.pose.pose.orientation.x,
-                                                     self.pose.pose.orientation.y, self.pose.pose.orientation.z)
+                                                self.pose.pose.orientation.y, self.pose.pose.orientation.z)
             Wpose = [self.pose.pose.position.x, self.pose.pose.position.y, self.pose.pose.position.z, WposeYaw]
 
             # update pid controller
@@ -401,5 +364,3 @@ if __name__ == '__main__':
         rospy.spin()
     except KeyboardInterrupt:
         print("Stopping node")
-
-    # curses.endwin()

@@ -1,36 +1,21 @@
-
-
-
 #!/usr/bin/env python
+
 import rospy
 from sensor_msgs.msg import Image
 import message_filters as mf
 from std_msgs.msg import String
 
-import numpy as np
 import cv2 as cv
 from cv_bridge import CvBridge, CvBridgeError
-import time
-
 
 import numpy as np
-import torch
-import torchvision.transforms as transforms
-import torch.backends.cudnn as cudnn
-import torch.nn as nn
-
-import time
-from math import *
-import time
-
-from copy import deepcopy
-
-import torch
-import torch.nn as nn
-import torchvision
-import torch.nn.functional as F
-
 import math
+import torch.backends.cudnn as cudnn
+import time
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
 ### config
 import torchvision.transforms as transforms
@@ -46,7 +31,6 @@ resnet_factor = 0.25
 num_train_tracks = 170
 num_val_tracks = 50
 jobs = 8
-
 
 input_channels = {
     'rgb': True,
@@ -83,8 +67,8 @@ dataset_basename = "dr_pretrain"
 # dataset_std = (2.5115e-01, 2.8758e-01, 3.2971e-01, 8.9808e+02)
 
 # domain randomization pretrain
-dataset_mean = (0.4973,  0.4651,  0.4801, 32.6839)
-dataset_std = (0.1714,  0.1960,  0.2171, 22.7819)
+dataset_mean = (0.4973, 0.4651, 0.4801, 32.6839)
+dataset_std = (0.1714, 0.1960, 0.2171, 22.7819)
 
 num_input_channels = (input_channels['rgb'] * 3) + \
                      (input_channels['depth'] * 1) + \
@@ -126,16 +110,10 @@ elif itypes == 'd' or itypes == 'do':
     ])
 
 
-# dagger config
-
-train_dagger = False
-initial_weight_path = "/home/kristoffer/dev/orb_imitation/datagen/eval/runs/X1Gate_evaluation/ResNet8_ds=X1Gate8tracks_l=rgb_f=0.25_bs=32_lt=MSE_lr=0.001_c=run0/epoch5.pth"
-skip_tracks = 10
-epoch_start = 10
-
 # calculate magnitude of vector
 def magnitude(vec):
     return np.sqrt(vec.dot(vec))
+
 
 '''
 taken from https://github.com/pytorch/pytorch/issues/67551#issuecomment-954972351
@@ -275,6 +253,7 @@ def image_resize(image, width=None, height=None, inter=cv.INTER_AREA):
     # return the resized image
     return resized
 
+
 def get_orb(img_left, img_right=None, n_features=1000, max_matches=100, orb=None):
     if len(img_left.shape) > 2:
         img_left = cv.cvtColor(img_left, cv.COLOR_BGR2GRAY)
@@ -290,13 +269,6 @@ def get_orb(img_left, img_right=None, n_features=1000, max_matches=100, orb=None
     return kp_left, des_left, None, None, None
 
 
-
-
-
-
-
-
-
 torch.set_grad_enabled(False)
 
 now = lambda: int(round(time.time() * 1000))
@@ -307,10 +279,6 @@ class NetworkTestClient():
 
     def __init__(self, modelPath, raceTrackName="track0", device='cuda', *args, **kwargs):
         self.loaded = False
-
-        # init super class (AirSimController)
-        # super().__init__(raceTrackName=raceTrackName, createDataset=False, *args, **kwargs)
-
 
         # ros setup
         self.firstCall = True
@@ -323,31 +291,6 @@ class NetworkTestClient():
         self.ts.registerCallback(self.callback)
 
         self.debugPublisher = rospy.Publisher("/vel", String, queue_size=10)
-
-
-
-
-
-        # self.gateConfigurations = []
-        # self.currentGateConfiguration = 0
-        #
-        # # dataset_basepath = "/media/micha/eSSD/datasets"
-        # dataset_basepath = self.config.dataset_basepath
-        # # dataset_basepath = "/data/datasets"
-        # # dataset_basename = "X4Gates_Circle_right_"
-        # dataset_basename = self.DATASET_NAME
-        # # dataset_basename = "X4Gates_Circle_2"
-        #
-        # self.trajectoryFile = f'{dataset_basepath}/{dataset_basename}/{raceTrackName}/trajectory_{itypes}.tum'
-        #
-        # # relead config file from dataset
-        # # configuration file
-        # self.configFile = open(f'{dataset_basepath}/{dataset_basename}/{raceTrackName}/config.json', "r")
-        #
-        # self.config = {}
-        # self.loadConfig(self.configFile)
-        #
-        # self.loadGatePositions(self.config.gates['poses'])
 
         self.model = ResNet8(input_dim=num_input_channels, output_dim=4, f=resnet_factor)
         if device == 'cuda':
@@ -364,130 +307,6 @@ class NetworkTestClient():
 
         print("model loaded.")
         self.loaded = True
-    # def run(self, uav_position=None):
-    #
-    #     self.client.simPause(False)
-    #
-    #     mission = True
-    #
-    #     # reset sim
-    #     self.reset()
-    #
-    #     # takeoff
-    #     self.client.takeoffAsync().join()
-    #
-    #     if uav_position:
-    #         uav_position[3] = uav_position[3] + 90
-    #         self.setPositionUAV(uav_position)
-    #         self.client.moveByVelocityAsync(float(0), float(0), float(0),
-    #                                         duration=float(3), yaw_mode=airsim.YawMode(False, uav_position[3]))
-    #
-    #     time.sleep(3)
-    #
-    #     # set backgorund texture
-    #     self.changeBackgroundTest()
-    #
-    #     lastImage = time.time()
-    #
-    #     timePerImage = 1. / float(self.config.framerate)
-    #
-    #     cimageindex = 0
-    #
-    #     mission_start = now()
-    #
-    #     # trajectory file
-    #     with open(self.trajectoryFile, 'w') as traj:
-    #
-    #         while mission:
-    #
-    #             # get current time and time delta
-    #             tn = time.time()
-    #
-    #             nextImage = tn - lastImage > timePerImage
-    #
-    #             if nextImage:
-    #                 # pause simulation
-    #                 prepause = time.time()
-    #                 self.client.simPause(True)
-    #
-    #                 # get images from AirSim API
-    #
-    #                 image, segres = self.loadWithAirsim(config.input_channels['depth'])
-    #
-    #                 if not self.checkGateInView(segres):
-    #                     mission = False
-    #                     pd(mission_start, "gates out of view after")
-    #                     return
-    #
-    #                 images = torch.unsqueeze(image, dim=0)
-    #                 images = images.to(self.dev)
-    #
-    #                 # predict vector with network
-    #                 s = now()
-    #                 pred = self.model(images)
-    #                 # pd(s, "inference")
-    #                 pred = pred.to(torch.device('cpu'))
-    #                 pred = pred.detach().numpy()
-    #                 pred = pred[0]  # remove batch
-    #
-    #                 cimageindex += 1
-    #
-    #                 # unpause simulation
-    #                 self.client.simPause(False)
-    #                 postpause = time.time()
-    #                 pausedelta = postpause - prepause
-    #                 if self.config.debug:
-    #                     self.c.addstr(10, 0, f"pausedelta: {pausedelta}")
-    #                 # else:
-    #                 #     print(f"pausedelta: {pausedelta}")
-    #                 tn += pausedelta
-    #                 lastImage = tn
-    #                 mission_start += pausedelta
-    #
-    #                 Bvel = pred[:3]
-    #
-    #                 # print(f"magnitude: {magnitude(Bvel)}")
-    #                 Bvel_percent = magnitude(Bvel) / 2
-    #                 # print(f"percent: {Bvel_percent*100}")
-    #                 # if magnitude of pid output is greater than velocity limit, scale pid output to velocity limit
-    #                 # if Bvel_percent > 1:
-    #                 Bvel = Bvel / Bvel_percent
-    #                 Byaw = pred[3] / Bvel_percent
-    #
-    #                 # print(f"y: {degrees(Byaw)}")
-    #
-    #                 ypercent = abs(degrees(Byaw) / 10)
-    #                 # print(f"ypercent: {ypercent}")
-    #                 if ypercent > 1:
-    #                     # print("limiting yaw")
-    #                     Bvel = Bvel / ypercent
-    #                     Byaw = Byaw / ypercent
-    #
-    #                 # send control command to airsim
-    #                 cstate = self.getState()
-    #
-    #                 # rotate velocity command such that it is in world coordinates
-    #                 Wvel = vector_body_to_world(Bvel, [0, 0, 0], cstate[3])
-    #
-    #                 # add pid output for yaw to current yaw position
-    #                 Wyaw = degrees(cstate[3]) + degrees(Byaw)
-    #
-    #                 # save current pose
-    #                 pose = self.getPositionUAV()
-    #                 traj.write(" ".join([str(el) for el in [tn, *pose]]) + "\n")
-    #
-    #                 '''
-    #                 Args:
-    #                     vx (float): desired velocity in world (NED) X axis
-    #                     vy (float): desired velocity in world (NED) Y axis
-    #                     vz (float): desired velocity in world (NED) Z axis
-    #                     duration (float): Desired amount of time (seconds), to send this command for
-    #                     drivetrain (DrivetrainType, optional):
-    #                     yaw_mode (YawMode, optional):
-    #                     vehicle_name (str, optional): Name of the multirotor to send this command to
-    #                 '''
-    #                 self.client.moveByVelocityAsync(float(Wvel[0]), float(Wvel[1]), float(Wvel[2]),
-    #                                                 duration=float(timePerImage), yaw_mode=airsim.YawMode(False, Wyaw))
 
     def preprocessImages(self, image, depth):
 
@@ -496,7 +315,6 @@ class NetworkTestClient():
 
         if input_channels['orb']:
             kp, des, _, _, _ = get_orb(image)
-            # pd(start, f"o3")
 
         # preprocess image
         image = transforms.Compose([
@@ -506,22 +324,17 @@ class NetworkTestClient():
         if input_channels['rgb']:
             sample = image
 
-        # pd(start, f"i4")
-
         if withDepth:
             depth = transforms.Compose([
                 transforms.ToTensor(),
             ])(depth)
-            # pd(start, f"d5")
             if sample is not None:
                 sample = torch.cat((sample, depth), dim=0)
             else:
                 sample = depth
-            # pd(start, f"d6")
 
         if tf:
             sample = tf(sample)
-            # pd(start, f"tf7")
 
         if input_channels['orb']:
             orbmask = torch.zeros_like(sample[0])
@@ -535,9 +348,6 @@ class NetworkTestClient():
                 sample = orbmask
 
         return sample
-
-
-
 
     def callback(self, limsg, depthmsg) -> None:
         if not self.loaded:
@@ -561,61 +371,31 @@ class NetworkTestClient():
                 depthImage = np.nan_to_num(depthImage)
             else:
                 depthImage = None
-# print(depthImage)
-            # depthImage = cv.applyColorMap(cv.convertScaleAbs(depthImage, alpha=0.03), cv.COLORMAP_JET)
 
             sample = self.preprocessImages(lcvImage, depthImage)
-
-#            print(sample.shape)
 
             sample = torch.unsqueeze(sample, dim=0)
             sample = sample.to(torch.device("cuda"))
 
             # predict vector with network
-#            s = now()
             pred = self.model(sample)
-            # pd(s, "inference")
             pred = pred.to(torch.device('cpu'))
             pred = pred.detach().numpy()
             pred = pred[0]  # remove batch
-
-
-            # Bvel = pred[:3]
-            #
-            # # print(f"magnitude: {magnitude(Bvel)}")
-            # Bvel_percent = magnitude(Bvel) / 2
-            # # print(f"percent: {Bvel_percent*100}")
-            # # if magnitude of pid output is greater than velocity limit, scale pid output to velocity limit
-            # # if Bvel_percent > 1:
-            # Bvel = Bvel / Bvel_percent
-            # Byaw = pred[3] / Bvel_percent
-            #
-            # # print(f"y: {degrees(Byaw)}")
-            #
-            # ypercent = abs(degrees(Byaw) / 10)
-            # # print(f"ypercent: {ypercent}")
-            # if ypercent > 1:
-            #     # print("limiting yaw")
-            #     Bvel = Bvel / ypercent
-            #     Byaw = Byaw / ypercent
-
-
 
             self.debugPublisher.publish(str(pred))
         except CvBridgeError as e:
             print(e)
 
 
-
 if __name__ == '__main__':
 
     rospy.init_node('listener', anonymous=True)
 
-    orb = NetworkTestClient(f"/home/mike/dev/orb_imitation/models/overfit/ResNet8_ds=X1Gate8tracks_l={itypes}_f=0.25_bs=32_lt=MSE_lr=0.001_c=run0/best.pth",
-                device="cuda", raceTrackName="", configFilePath='config_dr_test.json')
+    orb = NetworkTestClient(
+        f"/home/mike/dev/orb_imitation/models/ResNet8_ds=dr_pretrain_l={itypes}_f=0.5_bs=32_lt=MSE_lr=0.001_c=run0/best.pth")
 
     try:
         rospy.spin()
     except KeyboardInterrupt:
         print("Stopping node")
-
