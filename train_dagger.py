@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
     # configurations = shuffle(configurations)
 
-    with contextlib.closing(DaggerClient(model, configFilePath='datagen/config_dr.json', createDataset=False)) as dc:
+    with contextlib.closing(DaggerClient(model, configFilePath='datagen/config/config_dr.json', createDataset=False)) as dc:
         # generate random gate configurations within bounds set in config.json
         dc.generateGateConfigurations()
         configurations = deepcopy(dc.gateConfigurations)
@@ -75,7 +75,7 @@ if __name__ == "__main__":
             beta = 1 / (i+2)
 
             with contextlib.closing(
-                DaggerClient(model, beta=beta, device=config.device, raceTrackName=f"track{i+config.skip_tracks}", configFilePath='datagen/config_dr.json', createDataset=True)) as dc:
+                DaggerClient(model, beta=beta, device=config.device, raceTrackName=f"track{i+config.skip_tracks}", configFilePath='datagen/config/config_dr.json', createDataset=True)) as dc:
                 dc.gateConfigurations = [gateConfig]
 
                 # load next gate arrangement 
