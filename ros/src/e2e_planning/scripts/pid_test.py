@@ -289,6 +289,10 @@ def to_quaternion(pitch, roll, yaw):
 
 from geometry_msgs.msg import PoseStamped, TwistStamped
 
+from mavros_msgs.msg import State
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import PoseStamped, TwistStamped
+from mavros_msgs.srv import SetMode, SetModeRequest, SetModeResponse, CommandBool, CommandBoolRequest, CommandBoolResponse, CommandTOL, CommandTOLRequest
 
 class VelocityControllerNode:
 
@@ -317,6 +321,13 @@ class VelocityControllerNode:
         self.pose_sub = rospy.Subscriber("/mavros/vision_pose/pose", PoseStamped, self.callback)
         self.vel_pub = rospy.Publisher("/mavros/setpoint_velocity/cmd_vel", TwistStamped, queue_size=10)
         self.timer = rospy.Timer(rospy.Duration(0.01), self.updatePID)
+        self.current_state = State()
+        rospy.Subscriber('/mavros/state', State, self._current_state_cb)
+
+        self.set_mode("OFFBOARD")
+
+    def _current_state_cb(self, data):
+        self.current_state = data
 
     def callback(self, pose: PoseStamped) -> None:
 
@@ -352,6 +363,47 @@ class VelocityControllerNode:
             vel.twist.linear.z = Wvel[2]
             vel.twist.angular.z = Wyaw
             self.vel_pub.publish(vel)
+
+    ### service function ###
+
+    def set_mode(self, mode):
+        # if not self.current_state.connected:
+        #     print(
+        #     "No FCU connection")
+        #
+        # elif self.current_state.mode == mode:
+        #     print
+        #     "Already in " + mode + " mode"
+        #
+        # else:
+
+        # wait for service
+        rospy.wait_for_service("mavros/set_mode")
+
+        # service client
+        set_mode = rospy.ServiceProxy("mavros/set_mode", SetMode)
+
+        # set request object
+        req = SetModeRequest()
+        req.custom_mode = mode
+
+        # zero time
+        t0 = rospy.get_time()
+
+        # check response
+        while not rospy.is_shutdown() and (self.current_state.mode != req.custom_mode):
+            if rospy.get_time() - t0 > 2.0:  # check every 5 seconds
+
+                try:
+                    # request
+                    set_mode.call(req)
+
+                except rospy.ServiceException as e:
+                    print(f"Service did not process request: {str(e)}" )
+
+                t0 = rospy.get_time()
+
+        print("Mode: " + self.current_state.mode + " established")
 
 
 if __name__ == '__main__':
