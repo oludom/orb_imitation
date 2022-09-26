@@ -31,15 +31,15 @@ learning_rate = 0.001
 learning_rate_change = 0.1
 learning_rate_change_epoch = 5
 batch_size = 32
-resnet_factor = 0.25
+resnet_factor = 0.5
 num_train_tracks = 170
 num_val_tracks = 50
 jobs = 8
 
 input_channels = {
     'rgb': True,
-    'depth': True,
-    'orb': True
+    'depth': False,
+    'orb': False
 }
 
 TB_suffix = "run10"
@@ -741,7 +741,7 @@ class ResnetControllerNode (VelocityControllerNode):
         risub = mf.Subscriber("/zedm/zed_node/depth/depth_registered", Image)
 
         self.ts = mf.TimeSynchronizer([lisub, risub], 10)
-        self.ts.registerCallback(self.update)
+        self.ts.registerCallback(self.updateNetwork)
 
         # self.debugPublisher = rospy.Publisher("/vel", String, queue_size=10)
 
@@ -803,7 +803,7 @@ class ResnetControllerNode (VelocityControllerNode):
 
         return sample
 
-    def update(self, limsg, depthmsg) -> None:
+    def updateNetwork(self, limsg, depthmsg) -> None:
 
         if not self.loaded or self.pose is None:
             return
