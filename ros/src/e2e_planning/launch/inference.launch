@@ -1,33 +1,41 @@
-
-
 <launch>
 
-    <arg name="camera_name"          default="zedm" />
+    <arg name="camera_name" default="zedm"/>
 
-<!--    <include file="$(find mavros)/launch/apm.launch">-->
-<!--        <arg name="fcu_url" value="/dev/ttyUSB0:921600" />-->
-<!--    </include>-->
+    <include file="$(find mavros)/launch/px4.launch">
+        <arg name="fcu_url" value="/dev/ttyTHS2:921600"/>
+    </include>
 
-<!--     <group ns="$(arg camera_name)"> -->
-<!--         <include file="$(find zed_wrapper)/launch/include/zed_camera.launch.xml"> -->
-<!--             <arg name="camera_name"         value="$(arg camera_name)" /> -->
-<!--             <arg name="svo_file"            value="" /> -->
-<!--             <arg name="stream"              value="" /> -->
-<!--             <arg name="node_name"           value="zed_node" /> -->
-<!--             <arg name="camera_model"        value="zedm" /> -->
-<!--             <arg name="base_frame"          value="base_link" /> -->
-<!--             <arg name="publish_urdf"        value="true" /> -->
-<!--             <arg name="cam_pos_x"           value="0.0" /> -->
-<!--             <arg name="cam_pos_y"           value="0.0" /> -->
-<!--             <arg name="cam_pos_z"           value="0.0" /> -->
-<!--             <arg name="cam_roll"            value="0.0" /> -->
-<!--             <arg name="cam_pitch"           value="0.0" /> -->
-<!--             <arg name="cam_yaw"             value="0.0" /> -->
-<!--         </include> -->
-<!--     </group> -->
+    <group ns="$(arg camera_name)">
+        <include file="$(find zed_wrapper)/launch/include/zed_camera.launch.xml">
+            <arg name="camera_name" value="$(arg camera_name)"/>
+            <arg name="svo_file" value=""/>
+            <arg name="stream" value=""/>
+            <arg name="node_name" value="zed_node"/>
+            <arg name="camera_model" value="zedm"/>
+            <arg name="base_frame" value="base_link"/>
+            <arg name="publish_urdf" value="true"/>
+            <arg name="cam_pos_x" value="0.0"/>
+            <arg name="cam_pos_y" value="0.0"/>
+            <arg name="cam_pos_z" value="0.0"/>
+            <arg name="cam_roll" value="0.0"/>
+            <arg name="cam_pitch" value="0.0"/>
+            <arg name="cam_yaw" value="0.0"/>
+        </include>
+    </group>
 
-<!--     <node pkg="orb" name="orb_extractor" type="extractor.py" output="screen"> -->
+    <include file="$(find vicon_bridge)/launch/vicon.launch"/>
 
-<!--    </node>-->
+    <!-- use vicon for state estimator   -->
+    <node name="vicon_feeder" pkg="vicon_feeder" type="vicon_feed" output="screen">
+
+        <remap from="/drone_vicon_pose" to="/vicon/kakao/kakao"/>
+        <param name="publish_groundtruth_pose_to_drone" value="true"/>
+
+    </node>
+
+    <!--     <node pkg="orb" name="orb_extractor" type="extractor.py" output="screen"> -->
+
+    <!--    </node>-->
 </launch>
 

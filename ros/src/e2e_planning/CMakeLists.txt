@@ -5,13 +5,13 @@ project(e2e_planning)
  add_compile_options(-std=c++11)
 
 # set(OpenCV_DIR /home/micha/opencv3/installed/share/OpenCV)
-# set(OpenCV_DIR /usr/lib/aarch64-linux-gnu/cmake/opencv4/)
+set(OpenCV_DIR /usr/lib/aarch64-linux-gnu/cmake/opencv4/)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-#  OpenCV
+  OpenCV
   cv_bridge
   message_filters
   roscpp
