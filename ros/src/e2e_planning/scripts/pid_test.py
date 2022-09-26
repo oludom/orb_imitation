@@ -287,12 +287,16 @@ def to_quaternion(pitch, roll, yaw):
     return w, x, y, z
 
 
+from math import degrees, radians
+
 from geometry_msgs.msg import PoseStamped, TwistStamped
 
 from mavros_msgs.msg import State
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped, TwistStamped
-from mavros_msgs.srv import SetMode, SetModeRequest, SetModeResponse, CommandBool, CommandBoolRequest, CommandBoolResponse, CommandTOL, CommandTOLRequest
+from mavros_msgs.srv import SetMode, SetModeRequest, SetModeResponse, CommandBool, CommandBoolRequest, \
+    CommandBoolResponse, CommandTOL, CommandTOLRequest
+
 
 class VelocityControllerNode:
 
@@ -315,12 +319,13 @@ class VelocityControllerNode:
 
         # set initial state and goal to 0
         self.ctrl.setState([0, 0, 0, 0])
-        self.ctrl.setGoal([2., 2., 2., 0.])
+        self.ctrl.setGoal([0, 0, 0, 0])
+        # self.ctrl.setGoal([2., 2., 2., 0.])
 
         # subscribe to pose
         self.pose_sub = rospy.Subscriber("/mavros/vision_pose/pose", PoseStamped, self.callback)
         self.vel_pub = rospy.Publisher("/mavros/setpoint_velocity/cmd_vel", TwistStamped, queue_size=10)
-        self.timer = rospy.Timer(rospy.Duration(0.01), self.updatePID)
+        self.timer = rospy.Timer(rospy.Duration(0.02), self.updatePID)
         self.current_state = State()
         rospy.Subscriber('/mavros/state', State, self._current_state_cb)
 
@@ -337,21 +342,52 @@ class VelocityControllerNode:
 
         self.pose = pose
 
+    # pose: x,y,z,yaw in degrees
+    def getState(self):
+        _, _, WposeYaw = to_eularian_angles(self.pose.pose.orientation.w, self.pose.pose.orientation.x,
+                                            self.pose.pose.orientation.y, self.pose.pose.orientation.z)
+        return [self.pose.pose.position.x, self.pose.pose.position.y, self.pose.pose.position.z, WposeYaw]
+
+    def angleDifference(a: float, b: float):
+        return (a - b + 540) % 360 - 180
+
     def updatePID(self, *_) -> None:
+
+        wp = [2., 2., 2., 0.]
 
         if self.pose is not None:
             # update pid controller
-            _, _, WposeYaw = to_eularian_angles(self.pose.pose.orientation.w, self.pose.pose.orientation.x,
-                                                self.pose.pose.orientation.y, self.pose.pose.orientation.z)
-            Wpose = [self.pose.pose.position.x, self.pose.pose.position.y, self.pose.pose.position.z, WposeYaw]
+
+            # get current state
+            Wcstate = self.getState()
+
+            # set goal state of pid controller
+            Bgoal = vector_world_to_body(wp[:3], Wcstate[:3], Wcstate[3])
+            # desired yaw angle is target point yaw angle world minus current uav yaw angle world
+            ByawGoal = self.angleDifference(wp[3], degrees(Wcstate[3]))
+            print(f"angle target: {ByawGoal:5.4f}")
+            self.ctrl.setGoal([*Bgoal, ByawGoal])
 
             # update pid controller
-            self.ctrl.setState(Wpose)
             dt = rospy.Time.now() - self.lastUpdate
             print("dt: ", dt.to_sec())
             self.ctrl.update(dt.to_sec())
+
             # get current pid output´
-            Wvel, Wyaw = self.ctrl.getVelocityYaw()
+            Bvel, Byaw = self.ctrl.getVelocityYaw()
+
+            print(f"magnitude: {magnitude(Bvel)}")
+            Bvel_percent = magnitude(Bvel) / 2
+            print(f"percent: {Bvel_percent * 100}")
+            # if magnitude of pid output is greater than velocity limit, scale pid output to velocity limit
+            if Bvel_percent > 1:
+                Bvel = Bvel / Bvel_percent
+
+            # rotate velocity command such that it is in world coordinates
+            Wvel = vector_body_to_world(Bvel, [0, 0, 0], Wcstate[3])
+
+            # add pid output for yaw to current yaw position
+            # Wyaw = Wcstate[3] + radians(Byaw)
 
             self.lastUpdate = rospy.Time.now()
 
@@ -361,7 +397,7 @@ class VelocityControllerNode:
             vel.twist.linear.x = Wvel[0]
             vel.twist.linear.y = Wvel[1]
             vel.twist.linear.z = Wvel[2]
-            vel.twist.angular.z = Wyaw
+            vel.twist.angular.z = radians(Byaw)
             self.vel_pub.publish(vel)
 
     ### service function ###
@@ -399,7 +435,7 @@ class VelocityControllerNode:
                     set_mode.call(req)
 
                 except rospy.ServiceException as e:
-                    print(f"Service did not process request: {str(e)}" )
+                    print(f"Service did not process request: {str(e)}")
 
                 t0 = rospy.get_time()
 
