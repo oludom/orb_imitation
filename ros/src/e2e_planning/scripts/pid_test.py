@@ -333,7 +333,7 @@ class PIDController:
     # use for angle values e.g. yaw
     def updateAngle(self, dt: float, currentAngle: float, targetAngle: float):
         error = self.angleDifference(targetAngle, currentAngle)
-        print(f"target: {targetAngle}, current: {currentAngle}, error: {error}")
+        # print(f"target: {targetAngle}, current: {currentAngle}, error: {error}")
 
         P = self.proportionalGain * error
 
@@ -778,6 +778,8 @@ class ResnetControllerNode (VelocityControllerNode):
         print("model loaded.")
         self.loaded = True
 
+        self.sequence = 0
+
 
     def preprocessImages(self, image, depth):
 
@@ -828,6 +830,10 @@ class ResnetControllerNode (VelocityControllerNode):
             rospy.loginfo("Camera connected, receiving images.")
             self.firstCall = False
 
+        sn = self.sequence
+        self.sequence += 1
+        tn = now()
+
         try:
             # convert image
             if input_channels['rgb'] or input_channels['orb']:
@@ -849,11 +855,15 @@ class ResnetControllerNode (VelocityControllerNode):
             sample = torch.unsqueeze(sample, dim=0)
             sample = sample.to(torch.device("cuda"))
 
+            pd(tn, f"{sn} preprocessing")
+
             # predict vector with network
             pred = self.model(sample)
             pred = pred.to(torch.device('cpu'))
             pred = pred.detach().numpy()
             pred = pred[0]  # remove batch
+
+            pd(tn, f"{sn} prediction")
 
             Bvel, Byaw = pred[0:3], pred[3]
             Byaw *= 10
@@ -862,9 +872,9 @@ class ResnetControllerNode (VelocityControllerNode):
             Wcstate = self.getState()
 
 
-            print(f"magnitude: {magnitude(Bvel)}")
+            # print(f"magnitude: {magnitude(Bvel)}")
             Bvel_percent = magnitude(Bvel) / .5
-            print(f"percent: {Bvel_percent * 100}")
+            # print(f"percent: {Bvel_percent * 100}")
             # if magnitude of pid output is greater than velocity limit, scale pid output to velocity limit
             if Bvel_percent > 1:
                 Bvel = Bvel / Bvel_percent
