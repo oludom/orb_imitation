@@ -555,6 +555,23 @@ def to_eularian_angles(w, x, y, z):
 
     return pitch, roll, yaw
 
+def quat2eul(q):
+    w, x, y, z = q
+    t0 = +2.0 * (w * x + y * z)
+    t1 = +1.0 - 2.0 * (x * x + y * y)
+    X = math.degrees(math.atan2(t0, t1))
+    t2 = +2.0 * (w * y - z * x)
+    t2 = +1.0 if t2 > +1.0 else t2
+    t2 = -1.0 if t2 < -1.0 else t2
+    Y = math.degrees(math.asin(t2))
+    t3 = +2.0 * (w * z + x * y)
+    t4 = +1.0 - 2.0 * (y * y + z * z)
+    Z = math.degrees(math.atan2(t3, t4))
+    X = math.atan2(t0, t1)
+    Y = math.asin(t2)
+    Z = math.atan2(t3, t4)
+    return np.array([X, Y, Z])
+
 
 def to_quaternion(pitch, roll, yaw):
     t0 = math.cos(yaw * 0.5)
@@ -772,7 +789,7 @@ class ResnetControllerNode (VelocityControllerNode):
 
         # preprocess image
         image = transforms.Compose([
-            transforms.ToTensor(),
+            transforms.ToTensor()
         ])(image)
 
         if input_channels['rgb']:
@@ -780,7 +797,7 @@ class ResnetControllerNode (VelocityControllerNode):
 
         if withDepth:
             depth = transforms.Compose([
-                transforms.ToTensor(),
+                transforms.ToTensor()
             ])(depth)
             if sample is not None:
                 sample = torch.cat((sample, depth), dim=0)
@@ -814,7 +831,7 @@ class ResnetControllerNode (VelocityControllerNode):
         try:
             # convert image
             if input_channels['rgb'] or input_channels['orb']:
-                lcvImage = self.bridge.imgmsg_to_cv2(limsg, "bgr8")
+                lcvImage = np.frombuffer(limsg.data, dtype=np.uint8).reshape(limsg.height, limsg.width, -1)
                 lcvImage = image_resize(lcvImage, width=256, height=144)
             else:
                 lcvImage = None
@@ -839,13 +856,14 @@ class ResnetControllerNode (VelocityControllerNode):
             pred = pred[0]  # remove batch
 
             Bvel, Byaw = pred[0:3], pred[3]
+            Byaw *= 10
 
             # get current state
             Wcstate = self.getState()
 
 
             print(f"magnitude: {magnitude(Bvel)}")
-            Bvel_percent = magnitude(Bvel) / 2
+            Bvel_percent = magnitude(Bvel) / .5
             print(f"percent: {Bvel_percent * 100}")
             # if magnitude of pid output is greater than velocity limit, scale pid output to velocity limit
             if Bvel_percent > 1:
@@ -860,10 +878,20 @@ class ResnetControllerNode (VelocityControllerNode):
             vel.twist.linear.x = Wvel[0]
             vel.twist.linear.y = Wvel[1]
             vel.twist.linear.z = Wvel[2]
-            vel.twist.angular.z = radians(Byaw)
+            vel.twist.angular.z = radians(-Byaw)
             self.vel_pub.publish(vel)
 
         except CvBridgeError as e:
+            print(e)
+        except Exception as e:
+            # publish velocity
+            vel = TwistStamped()
+            vel.header.stamp = rospy.Time.now()
+            vel.twist.linear.x = 0.
+            vel.twist.linear.y = 0.
+            vel.twist.linear.z = 0.
+            vel.twist.angular.z = 0.
+            self.vel_pub.publish(vel)
             print(e)
 
 
