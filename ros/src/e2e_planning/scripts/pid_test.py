@@ -757,7 +757,7 @@ class ResnetControllerNode (VelocityControllerNode):
         lisub = mf.Subscriber('/zedm/zed_node/left/image_rect_color', Image)
         risub = mf.Subscriber("/zedm/zed_node/depth/depth_registered", Image)
 
-        self.ts = mf.TimeSynchronizer([lisub, risub], 10)
+        self.ts = mf.TimeSynchronizer([lisub, risub], 1)
         self.ts.registerCallback(self.updateNetwork)
 
         # self.debugPublisher = rospy.Publisher("/vel", String, queue_size=10)
