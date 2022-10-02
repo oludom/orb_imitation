@@ -20,6 +20,7 @@ input_channels = {
     'orb': False,
     'sparse': False
 }
+#gate net only
 image_dim = (120,160)  # Height, Width
 
 
