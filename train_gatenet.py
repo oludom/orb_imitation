@@ -78,7 +78,7 @@ if __name__ == "__main__":
         # for each configuration
         for i, gateConfig in enumerate(configurations):
             i_contitnue = i 
-            wandb.init(project="Resnet16_rgbsparse_new_planner", entity="dungtd2403")
+            wandb.init(project="Gatenet_rgb_new_planner", entity="dungtd2403")
             # wandb.config = {
             #         "learning_rate": 0.001,
             #         "epochs": 2,
@@ -119,9 +119,14 @@ if __name__ == "__main__":
                     
             torch.save(current_model, str(TB_path) + f"/round{i_contitnue}.pth")
             i_beta= i
+
+            # Init round for training with expert only
+
+            init_round = 5
+
             wandb.log({f"beta round{i_beta}": beta})
-            if i > 10:
-                change_rate = schedular_rate(i_beta)
+            if i > init_round:
+                change_rate = schedular_rate(i_beta - init_round)
                 agent_round = 0 
                 beta -= change_rate
 
