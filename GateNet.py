@@ -120,9 +120,7 @@ class RaceGateNet(GateNet):
         self.dense8 = nn.Linear(in_features=5*16*3, out_features=config['output_shape'])
 
     def forward(self, x):
-        print(x.shape)
         x = self.conv1(x)
-        
         x = self.conv2(x)
         x = self.conv3(x)
         x = self.conv4(x)
