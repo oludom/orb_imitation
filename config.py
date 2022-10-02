@@ -1,8 +1,9 @@
+from asyncio import FastChildWatcher
 import torchvision.transforms as transforms
 
 device = 'cuda'
 parallel = True
-epochs = 5
+epochs = 1
 learning_rate = 0.001
 learning_rate_change = 0.1
 learning_rate_change_epoch = 5
@@ -14,9 +15,10 @@ jobs = 8
 
 
 input_channels = {
-    'rgb': False,
-    'depth': True,
-    'orb': False
+    'rgb': True,
+    'depth': False,
+    'orb': False,
+    'sparse': True
 }
 
 TB_suffix = "run0"
@@ -26,13 +28,13 @@ skipFirstXImages = 80  # 60
 skipLastXImages = 10  # 54
 
 # project_basepath = "/workspaces/imitation"
-project_basepath = "/home/micha/dev/ml/orb_imitation"
+project_basepath = "/media/data2/teamICRA/src/micha_develop/orb_imitation"
 # dataset_basepath = "/media/micha/eSSD/datasets"
 # dataset_basepath = "/home/micha/dev/datasets/droneracing"
-dataset_basepath = "/data/datasets/dr_pretrain"
+dataset_basepath = "/media/data2/teamICRA/X4Gates_Circles_rl18tracks"
 # dataset_basename = "X4Gates_Circle_right_"
 # dataset_basename = "X4Gates_Circles"
-dataset_basename = "dr_pretrain"
+dataset_basename = "ResNet_Sparse_rt=30"
 # dataset_basename = "X4Gates_Circle_2"
 
 # X1Gate200
@@ -54,7 +56,7 @@ dataset_std = (0.1714,  0.1960,  0.2171, 22.7819)
 num_input_channels = (input_channels['rgb'] * 3) + \
                      (input_channels['depth'] * 1) + \
                      (input_channels['orb'] * 1)
-
+                     
 if num_input_channels < 1:
     print("No input channels selected")
     exit(0)
@@ -63,7 +65,8 @@ if num_input_channels < 1:
 itypes = [
     'rgb' if input_channels['rgb'] else '',
     'd' if input_channels['depth'] else '',
-    'o' if input_channels['orb'] else ''
+    'o' if input_channels['orb'] else '',
+    'sparse' if input_channels['sparse'] else ''
 ]
 itypes = ''.join(itypes)
 
@@ -87,11 +90,13 @@ elif itypes == 'd' or itypes == 'do':
             dataset_std[3])
     ])
 
-
+# if end - start >= 1:
+            #     print(f'image_id={cimageindex}')
+            #     start=time.time()
 # dagger config
 
-train_dagger = False
-initial_weight_path = "/home/kristoffer/dev/orb_imitation/datagen/eval/runs/X1Gate_evaluation/ResNet8_ds=X1Gate8tracks_l=rgb_f=0.25_bs=32_lt=MSE_lr=0.001_c=run0/epoch5.pth"
-skip_tracks = 10
+train_dagger = True
+initial_weight_path = "/media/data2/teamICRA/src/micha_develop/orb_imitation/runs_dagger/Resnet16_ds=ResNet_Sparse_rt=30_l=rgbsparse_f=0.5_bs=32_lt=MSE_lr=0.001_c=run0_newPlanner_rt=30/round34.pth"
+skip_tracks = 46
 epoch_start = 10
 
