@@ -18,8 +18,10 @@ input_channels = {
     'rgb': True,
     'depth': False,
     'orb': False,
-    'sparse': True
+    'sparse': False
 }
+image_dim = (120,160)  # Height, Width
+
 
 TB_suffix = "run0"
 loss_type = "MSE"
@@ -34,7 +36,7 @@ project_basepath = "/media/data2/teamICRA/src/micha_develop/orb_imitation"
 dataset_basepath = "/media/data2/teamICRA/X4Gates_Circles_rl18tracks"
 # dataset_basename = "X4Gates_Circle_right_"
 # dataset_basename = "X4Gates_Circles"
-dataset_basename = "ResNet_Sparse_rt=30"
+dataset_basename = "GateNet_rt=30"
 # dataset_basename = "X4Gates_Circle_2"
 
 # X1Gate200
@@ -97,6 +99,6 @@ elif itypes == 'd' or itypes == 'do':
 
 train_dagger = True
 initial_weight_path = "/media/data2/teamICRA/src/micha_develop/orb_imitation/runs_dagger/Resnet16_ds=ResNet_Sparse_rt=30_l=rgbsparse_f=0.5_bs=32_lt=MSE_lr=0.001_c=run0_newPlanner_rt=30/round34.pth"
-skip_tracks = 46
+skip_tracks = 0 
 epoch_start = 10
 
