@@ -45,7 +45,7 @@ def load_dataset_train_val_split(dataset_basepath, dataset_basename, device, max
         loadOrb=input_channels['orb'],
         loadSparse = input_channels['sparse'],
         # add gate net input dim
-        new_dim =(120,160)
+        new_dim = config.image_dim
     )
     phases = ['train', 'val']
     # print(len(dataset))
