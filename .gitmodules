@@ -1,3 +1,4 @@
 [submodule "datagen"]
 	path = datagen
 	url = git@github.com:oludom/airsim_datagen.git
+	branch = dagger-dev
