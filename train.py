@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 from torch.backends import cudnn
-
+import wandb
 from datagen.RaceTrackLoader import RaceTracksDataset
-
+from tqdm import tqdm
 from pathlib import Path
 import copy
 
@@ -42,7 +42,9 @@ def load_dataset_train_val_split(dataset_basepath, dataset_basename, device, max
         skipFirstXImages=skipFirstXImages,
         loadRGB=input_channels['rgb'],
         loadDepth=input_channels['depth'],
-        loadOrb=input_channels['orb']
+        loadOrb=input_channels['orb'],
+        loadSparse = input_channels['sparse'],
+        new_dim = None
     )
     phases = ['train', 'val']
     # print(len(dataset))
@@ -137,8 +139,8 @@ def print_mean_std(datasets):
 def get_path_for_run(project_basepath, dataset_basename, itypes, resnet_factor, batch_size, loss_type, learning_rate,
                      TB_suffix):
     TB_path = Path(project_basepath,
-                   f"runs/ResNet8_ds={dataset_basename}_l={itypes}_f={resnet_factor}"
-                   f"_bs={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}")
+                   f"runs_dagger/Resnet16_ds={dataset_basename}_l={itypes}_f={resnet_factor}"
+                   f"_bs={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}_newPlanner_rt=30_continue")
     if TB_path.exists():
         print("TB_path exists")
         exit(0)
@@ -168,7 +170,7 @@ def train_epoch(epoch, epochs, model, phases, learning_rate, learning_rate_chang
 
         dataset = datasets[phase]
 
-        for images, labels in dataset:  # change images to batches
+        for step, (images, labels) in enumerate(tqdm(dataset)):  # change images to batches
 
             # if epoch == 0 and step_pos['train'] == 0:
             #     img_grid = torchvision.utils.make_grid(images)
@@ -199,18 +201,23 @@ def train_epoch(epoch, epochs, model, phases, learning_rate, learning_rate_chang
             # print("batch:", i, "loss:", loss.item())
             writer.add_scalar(f"Loss/{phase}", loss.item(), global_step=(step_pos[phase]))
             step_pos[phase] += 1
+            
+            n_steps_per_epoch = len(dataset)
+            metrics = {f"{phase}/batch_loss": loss, 
+                        f"{phase}/epoch": (step + 1 + (n_steps_per_epoch * epoch)) / n_steps_per_epoch, 
+                            }
+            if step + 1 < n_steps_per_epoch:
+                # 🐝 Log train metrics to wandb 
+                wandb.log(metrics)
 
         # step_lr_scheduler.step()
         avg_total_loss = total_loss[phase] / batch_count[phase]
         print("epoch:", epoch, phase, "loss:", avg_total_loss)
         writer.add_scalar("Loss/epoch/" + phase, avg_total_loss, global_step=epoch)
+        wandb.log({f"{phase}/avg_loss": avg_total_loss})
+        
 
-        # if phase == 'val' and avg_total_loss < best_loss:
-        #     best_loss = avg_total_loss
-        current_model = copy.deepcopy(model.state_dict())
-        torch.save(current_model, str(TB_path) + f"/epoch{epoch}.pth")
-
-    return model
+    return model , avg_total_loss
 
 
 def train(project_basepath,
