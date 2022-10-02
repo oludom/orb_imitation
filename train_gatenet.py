@@ -102,6 +102,7 @@ if __name__ == "__main__":
             datasets = load_dataset_train_val_split(config.dataset_basepath, bn , config.device, 1000,
                             config.input_channels, config.skipFirstXImages, config.skipLastXImages, config.batch_size, config.tf, config.jobs)
 
+
             batch_count = {}
             for el in config.phases:
                 batch_count[el] = len(datasets[el])
@@ -118,15 +119,15 @@ if __name__ == "__main__":
                     current_model = copy.deepcopy(model.state_dict())
                     
             torch.save(current_model, str(TB_path) + f"/round{i_contitnue}.pth")
-            i_beta= i
+            beta_index = i
 
             # Init round for training with expert only
 
-            init_round = 5
+            init_round = 1
 
-            wandb.log({f"beta round{i_beta}": beta})
+            wandb.log({f"beta round{beta_index}": beta})
             if i > init_round:
-                change_rate = schedular_rate(i_beta - init_round)
+                change_rate = schedular_rate(beta_index - init_round)
                 agent_round = 0 
                 beta -= change_rate
 
