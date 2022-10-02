@@ -44,7 +44,8 @@ def load_dataset_train_val_split(dataset_basepath, dataset_basename, device, max
         loadDepth=input_channels['depth'],
         loadOrb=input_channels['orb'],
         loadSparse = input_channels['sparse'],
-        new_dim = None
+        # add gate net input dim
+        new_dim =(120,160)
     )
     phases = ['train', 'val']
     # print(len(dataset))
@@ -139,7 +140,7 @@ def print_mean_std(datasets):
 def get_path_for_run(project_basepath, dataset_basename, itypes, resnet_factor, batch_size, loss_type, learning_rate,
                      TB_suffix):
     TB_path = Path(project_basepath,
-                   f"runs_dagger/Resnet16_ds={dataset_basename}_l={itypes}_f={resnet_factor}"
+                   f"runs_dagger/Gatenet_ds={dataset_basename}_l={itypes}_f={resnet_factor}"
                    f"_bs={batch_size}_lt={loss_type}_lr={learning_rate}_c={TB_suffix}_newPlanner_rt=30_continue")
     if TB_path.exists():
         print("TB_path exists")
